@@ -74,6 +74,7 @@ function renderTopo() {
 
   let nav = '';
   if (me && me.papel === 'admin') nav += link('#/admin', 'Painel');
+  if (me) nav += `<a href="#/conta" class="${rota.startsWith('#/conta') ? 'ativo' : ''}">Conta</a>`;
   nav += `<a href="#/turmas" class="${rota.startsWith('#/turmas') || rota.startsWith('#/grade') ? 'ativo' : ''}">Turmas</a>`;
 
   $topo.innerHTML = `
@@ -115,6 +116,13 @@ window.addEventListener('hashchange', rotear);
 async function rotear() {
   const url = location.hash || '#/turmas';
   renderTopo();
+
+  const publicaRota = url === '#/login' || url === '#/registrar';
+  if (!estado.me && !publicaRota) {
+    location.hash = '#/login';
+    return rotear();
+  }
+
   $view.innerHTML = '<div class="carregando">Carregando…</div>';
 
   try {
@@ -123,11 +131,12 @@ async function rotear() {
 
     if (url === '#/login') return telaLogin();
     if (url === '#/registrar') return telaRegistro();
+    if (url === '#/conta') return telaConta();
     if (mGrade) return await telaGrade(+mGrade[1], +mGrade[2]);
     if (mAdmin) return await telaAdmin(mAdmin[1]);
     return await telaTurmas();
   } catch (e) {
-    $view.innerHTML = `<div class="mensagem ${e.message.includes('login') ? '' : 'mensagem--erro'}">${esc(e.message)}</div>`;
+    $view.innerHTML = `<div class="mensagem mensagem--erro">${esc(e.message)}</div>`;
   }
 }
 
@@ -229,6 +238,55 @@ function telaRegistro() {
       rotear();
     } catch (err) {
       document.getElementById('erro-registro').textContent = err.message;
+    }
+  };
+}
+
+// ---------------------------------------------------------------- minha conta
+
+function telaConta() {
+  $view.innerHTML = `
+    <div class="aut-box">
+      <div class="aut-cartao">
+        <div class="aut-cartao__marca">
+          <h1>Minha conta</h1>
+          <p>Conectado como ${esc(estado.me.usuario)}</p>
+        </div>
+        <form id="form-senha" novalidate>
+          <label class="campo"><span>Senha atual</span>
+            <input name="atual" type="password" autocomplete="current-password" required />
+          </label>
+          <label class="campo"><span>Nova senha (mín. 6)</span>
+            <input name="nova" type="password" autocomplete="new-password" required minlength="6" />
+          </label>
+          <label class="campo"><span>Confirmar nova senha</span>
+            <input name="confirma" type="password" autocomplete="new-password" required minlength="6" />
+          </label>
+          <p class="erro-form" id="erro-senha"></p>
+          <button class="btn btn--primario" type="submit">Trocar senha</button>
+        </form>
+      </div>
+    </div>`;
+
+  document.getElementById('form-senha').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const erro = document.getElementById('erro-senha');
+    erro.textContent = '';
+    if (f.nova.value !== f.confirma.value) {
+      erro.textContent = 'A confirmação não confere com a nova senha.';
+      return;
+    }
+    try {
+      await api('/api/auth/trocar-senha', {
+        method: 'POST',
+        body: JSON.stringify({ atual: f.atual.value, nova: f.nova.value })
+      });
+      toast('Senha alterada com sucesso.', 'ok');
+      location.hash = '#/turmas';
+      rotear();
+    } catch (err) {
+      erro.textContent = err.message;
     }
   };
 }
@@ -428,9 +486,9 @@ async function abaProfessores() {
     </form>
     <div class="lista-simples">
       ${professores.map(p => `
-        <div class="painel-item">
-          <strong data-id="${p.id}">${esc(p.nome)}</strong>
-          <small>${p.aulas} aula${p.aulas === 1 ? '' : 's'} Vinculada${p.aulas === 1 ? '' : 's'}</small>
+        <div class="painel-item" data-prof="${p.id}">
+          <strong data-nome-prof>${esc(p.nome)}</strong>
+          <small>${p.aulas} aula${p.aulas === 1 ? '' : 's'}</small>
           <button class="btn btn--mini" data-renomear="${p.id}">Renomear</button>
           <button class="btn btn--mini btn--perigo" data-excluir-prof="${p.id}">Excluir</button>
         </div>`).join('')}
@@ -446,13 +504,38 @@ async function abaProfessores() {
   };
 
   corpo.querySelectorAll('[data-renomear]').forEach(b => {
-    b.onclick = async () => {
-      const id = b.dataset.renomear;
-      const atual = corpo.querySelector(`strong[data-id="${id}"]`).textContent;
-      const nome = prompt('Novo nome do professor:', atual);
-      if (nome == null) return;
-      try { await api(`/api/admin/professores/${id}`, { method: 'PUT', body: JSON.stringify({ nome: nome.trim() }) }); toast('Renomeado.', 'ok'); abaProfessores(); }
-      catch (err) { toast(err.message, 'erro'); }
+    b.onclick = () => {
+      const item = b.closest('[data-prof]');
+      const nomeEl = item.querySelector('[data-nome-prof]');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 60;
+      input.value = nomeEl.textContent;
+      input.style.flex = '1';
+      input.style.minWidth = '9rem';
+      nomeEl.replaceWith(input);
+      input.focus();
+
+      const cancel = () => abaProfessores();
+      let fechando = false;
+      const salvar = async () => {
+        if (fechando) return;
+        const nome = input.value.trim();
+        if (nome === nomeEl.textContent) { fechando = true; abaProfessores(); return; }
+        if (nome.length < 2) { toast('Nome deve ter no mínimo 2 caracteres.', 'erro'); input.focus(); return; }
+        fechando = true;
+        try {
+          await api(`/api/admin/professores/${item.dataset.prof}`, { method: 'PUT', body: JSON.stringify({ nome }) });
+          toast('Professor renomeado.', 'ok');
+        } catch (err) { toast(err.message, 'erro'); }
+        abaProfessores();
+      };
+
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); salvar(); }
+        if (e.key === 'Escape') cancel();
+      };
+      input.onblur = salvar;
     };
   });
 
@@ -500,6 +583,8 @@ async function abaAulas() {
                 <option value="">— sem professor —</option>
                 ${listaProf.map(p => `<option value="${p.id}" ${aula.professor_id === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
               </select>
+              <button class="btn btn--mini btn--primario" data-salvar title="Salvar matéria e professor">Salvar</button>
+              <span class="editor-aula__status" data-status></span>
               <button class="btn btn--mini" data-mover="subir" ${h.ordem === 1 ? 'disabled' : ''} aria-label="Mover para cima">↑</button>
               <button class="btn btn--mini" data-mover="descer" ${h.ordem === 6 ? 'disabled' : ''} aria-label="Mover para baixo">↓</button>
             </div>`;
@@ -517,20 +602,38 @@ async function abaAulas() {
 
   corpo.querySelectorAll('.editor-aula').forEach(linha => {
     const id = Number(linha.dataset.aula);
+    const inputMateria = linha.querySelector('[data-campo="materia"]');
+    const inputProf = linha.querySelector('[data-campo="professor_id"]');
+    const btnSalvar = linha.querySelector('[data-salvar]');
+    const status = linha.querySelector('[data-status]');
+    const botaoMover = [...linha.querySelectorAll('[data-mover]')];
+
     const salvar = async () => {
+      if (btnSalvar.disabled) return;
+      btnSalvar.disabled = true;
+      botaoMover.forEach(x => x.disabled = true);
+      status.textContent = 'Salvando…';
       try {
         await api(`/api/admin/aulas/${id}`, {
           method: 'PUT',
           body: JSON.stringify({
-            materia: linha.querySelector('[data-campo="materia"]').value,
-            professor_id: linha.querySelector('[data-campo="professor_id"]').value
+            materia: inputMateria.value,
+            professor_id: inputProf.value
           })
         });
-        toast('Aula atualizada.', 'ok');
-      } catch (e) { toast(e.message, 'erro'); }
+        status.textContent = 'Salvo ✓';
+        setTimeout(() => { status.textContent = ''; }, 2500);
+      } catch (e) {
+        status.textContent = '';
+        toast(e.message, 'erro');
+      }
+      btnSalvar.disabled = false;
+      botaoMover.forEach(x => x.disabled = false);
     };
-    linha.querySelector('[data-campo="materia"]').onchange = salvar;
-    linha.querySelector('[data-campo="professor_id"]').onchange = salvar;
+
+    btnSalvar.onclick = salvar;
+    inputMateria.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); salvar(); } };
+    inputProf.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); salvar(); } };
 
     linha.querySelectorAll('[data-mover]').forEach(b => {
       b.onclick = async () => {
@@ -568,6 +671,7 @@ async function abaUsuarios() {
         <div class="painel-item">
           <strong>${esc(u.usuario)}</strong>
           <small>${esc(u.nome)} · ${u.papel === 'admin' ? 'administrador' : 'aluno'}${u.turma_nome ? ' · ' + esc(u.turma_nome) : ''}</small>
+          <button class="btn btn--mini" data-nova-senha="${u.id}">Nova senha</button>
           <button class="btn btn--mini btn--perigo" data-excluir-usr="${u.id}" ${u.id === estado.me.id ? 'disabled' : ''}>Excluir</button>
         </div>`).join('')}
     </div>`;
@@ -587,6 +691,18 @@ async function abaUsuarios() {
       abaUsuarios();
     } catch (err) { toast(err.message, 'erro'); }
   };
+
+  corpo.querySelectorAll('[data-nova-senha]').forEach(b => {
+    b.onclick = async () => {
+      const senha = prompt(`Nova senha para o usuário (mín. 6 caracteres):`, '');
+      if (senha == null) return;
+      if (senha.length < 6) { toast('A senha precisa ter ao menos 6 caracteres.', 'erro'); return; }
+      try {
+        await api(`/api/admin/usuarios/${b.dataset.novaSenha}/senha`, { method: 'PUT', body: JSON.stringify({ senha }) });
+        toast('Senha redefinida.', 'ok');
+      } catch (err) { toast(err.message, 'erro'); }
+    };
+  });
 
   corpo.querySelectorAll('[data-excluir-usr]').forEach(b => {
     b.onclick = async () => {

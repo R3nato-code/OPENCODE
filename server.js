@@ -146,6 +146,19 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/auth/trocar-senha', exigirSessao, (req, res) => {
+  const { atual, nova } = req.body || {};
+  if (typeof nova !== 'string' || nova.length < 6 || nova.length > 72) {
+    return res.status(400).json({ erro: 'A nova senha precisa ter ao menos 6 caracteres.' });
+  }
+  const u = db.prepare('SELECT senha FROM usuarios WHERE id = ?').get(req.usuario.id);
+  if (!u || !bcrypt.compareSync(String(atual || ''), u.senha)) {
+    return res.status(401).json({ erro: 'Senha atual incorreta.' });
+  }
+  db.prepare('UPDATE usuarios SET senha = ? WHERE id = ?').run(bcrypt.hashSync(nova, 10), req.usuario.id);
+  res.json({ ok: true });
+});
+
 app.get('/api/auth/me', (req, res) => {
   const u = usuarioAtual(req);
   if (!u) return res.json({ autenticado: false });
@@ -159,7 +172,7 @@ app.get('/api/auth/me', (req, res) => {
 
 // ---------------------------------------------------------------- turmas / grade
 
-app.get('/api/turmas', (req, res) => {
+app.get('/api/turmas', exigirSessao, (req, res) => {
   const u = usuarioAtual(req);
   let favoritas = new Set();
   if (u) favoritas = new Set(db.prepare('SELECT turma_id FROM favoritos WHERE usuario_id = ?').all(u.id).map(r => r.turma_id));
@@ -185,7 +198,7 @@ app.post('/api/favoritos/:turmaId', exigirSessao, (req, res) => {
   res.json({ favorita: true });
 });
 
-app.get('/api/grade/:turmaId', (req, res) => {
+app.get('/api/grade/:turmaId', exigirSessao, (req, res) => {
   const id = Number(req.params.turmaId);
   const turma = db.prepare('SELECT id, nome, tipo FROM turmas WHERE id = ?').get(id);
   if (!turma) return res.status(404).json({ erro: 'Turma não encontrada.' });
@@ -293,6 +306,17 @@ app.delete('/api/admin/usuarios/:id', exigirAdmin, (req, res) => {
   const id = Number(req.params.id);
   if (id === req.usuario.id) return res.status(400).json({ erro: 'Você não pode excluir a própria conta.' });
   const r = db.prepare('DELETE FROM usuarios WHERE id = ?').run(id);
+  if (!r.changes) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+  res.json({ ok: true });
+});
+
+app.put('/api/admin/usuarios/:id/senha', exigirAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const { senha } = req.body || {};
+  if (typeof senha !== 'string' || senha.length < 6 || senha.length > 72) {
+    return res.status(400).json({ erro: 'A senha precisa ter ao menos 6 caracteres.' });
+  }
+  const r = db.prepare('UPDATE usuarios SET senha = ? WHERE id = ?').run(bcrypt.hashSync(senha, 10), id);
   if (!r.changes) return res.status(404).json({ erro: 'Usuário não encontrado.' });
   res.json({ ok: true });
 });

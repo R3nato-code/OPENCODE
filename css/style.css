@@ -421,6 +421,13 @@ a:hover { color: var(--verde-forte); }
   flex: none;
 }
 
+.editor-aula__status {
+  color: var(--verde-forte);
+  font-size: .8rem;
+  font-weight: 700;
+  flex: none;
+}
+
 .editor-aula input[type="text"] { flex: 1; min-width: 9rem; }
 .editor-aula select { flex: 1; min-width: 7.5rem; max-width: 14rem; }
 

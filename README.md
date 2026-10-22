@@ -2,9 +2,10 @@
 
 Sistema para gerenciar e exibir a grade de aulas de uma escola.
 
-- **Login com banco de dados** (SQLite): usuários `aluno` e `admin`, senhas com hash.
+- **Login obrigatório** para visualizar turmas e grades (registro públicos apenas para `aluno`; senhas com hash).
 - **Aluno:** vê a grade de qualquer turma e marca turmas como **favoritas**.
-- **Admin:** cria turmas e professores, edita aulas (matéria, professor e **ordem**), cria contas.
+- **Admin:** cria turmas e professores, edita aulas (matéria, professor e **ordem**), cria contas, redefine senhas.
+- **Troca de senha:** todo usuário em "Conta" no menu; admin também redefine a senha de qualquer usuário no painel.
 - **PWA:** instalável, service worker com cache offline do app.
 - **Deploy:** Render (Blueprint via `render.yaml`).
 
@@ -51,7 +52,7 @@ render.yaml               Blueprint de deploy no Render
 
 1. Push do repositório para o GitHub.
 2. No Render: **New + → Blueprint** — o `render.yaml` define o serviço web.
-3. *Plano free:* o disco é efêmero — em cada deploy o banco volta ao estado semeado. Para persistir dados, use um plano pago com disco (instruções comentadas no `render.yaml`).
+3. *Plano free:* o disco é efêmero — **em cada deploy/restart o banco volta ao estado semeado e as edições se perdem.** Para uso real em instituição, garanta persistência: plano pago com disco (instruções comentadas no `render.yaml`, via `DATA_DIR`) ou migrar o `db.js` para um banco externo (ex.: Neon/Turso, plano gratuito).
 4. O `SESSION_SECRET` é gerado automaticamente pelo Render.
 
 ## Segurança
@@ -60,6 +61,6 @@ render.yaml               Blueprint de deploy no Render
 - Registro público só cria `aluno`; papéis e rotas administrativas validados no servidor.
 - Consultas parametrizadas (sem SQL injection) e saída escapada no frontend (sem XSS).
 
-## Auditoria de seguran�a
+## Auditoria de seguran�a
 
-Execute os testes de seguran�a localmente com `scripts\testa-seguranca.ps1` (bloqueio do arquivo do banco, JSON malformado, cookies adulterados, SQL injection, autoriza��o e headers).
+Execute os testes de seguran�a localmente com `scripts\testa-seguranca.ps1` (bloqueio do arquivo do banco, JSON malformado, cookies adulterados, SQL injection, autoriza��o e headers).
