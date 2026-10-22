@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: vila-esfirra
+    runtime: static
+    buildCommand: echo "site estatico - sem build"
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /sw.js
+        headers:
+          - key: Service-Worker-Allowed
+            value: /
+          - key: Cache-Control
+            value: no-cache
+      - path: /index.html
+        headers:
+          - key: Cache-Control
+            value: no-cache
+      - path: /manifest.webmanifest
+        headers:
+          - key: Cache-Control
+            value: no-cache
+      - path: /icons/*
+        headers:
+          - key: Cache-Control
+            value: public, max-age=86400
+      - path: /css/*
+        headers:
+          - key: Cache-Control
+            value: public, max-age=86400
+      - path: /js/*
+        headers:
+          - key: Cache-Control
+            value: public, max-age=86400
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
