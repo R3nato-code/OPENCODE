@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vila Esfirra — Mini Esfirras Artesanais</title>
+  <meta name="description" content="Mini esfirras artesanais de carne, frango, queijo e doces. Feitas na hora, direto do forno. Pedido rápido pelo WhatsApp. Delivery e retirada." />
+  <meta name="theme-color" content="#e2542c" />
+  <meta property="og:title" content="Vila Esfirra — Mini Esfirras Artesanais" />
+  <meta property="og:description" content="Mini esfirras fresquinhas direto do forno. Peça pelo WhatsApp!" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#cardapio">Ir para o cardápio</a>
+
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="#inicio" class="logo" aria-label="Vila Esfirra — início">
+        <span class="logo__icon" aria-hidden="true">🔥</span>
+        <span class="logo__text">Vila <strong>Esfirra</strong></span>
+      </a>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="#cardapio" class="nav__link">Cardápio</a>
+        <a href="#como" class="nav__link">Como funciona</a>
+        <a href="#sobre" class="nav__link">Sobre</a>
+        <a href="#contato" class="nav__link">Contato</a>
+      </nav>
+      <div class="header__actions">
+        <button class="btn btn--ghost btn--install" id="btn-install-header" hidden>Instalar app</button>
+        <button class="cart-btn" id="btn-cart" aria-label="Abrir carrinho" aria-expanded="false" aria-controls="cart-drawer">
+          <span aria-hidden="true">🛒</span>
+          <span class="cart-btn__badge" id="cart-badge" hidden>0</span>
+        </button>
+        <button class="menu-btn" id="btn-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobile-nav" hidden>
+          <span class="menu-btn__bar"></span>
+          <span class="menu-btn__bar"></span>
+          <span class="menu-btn__bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Menu">
+    <a href="#cardapio" class="mobile-nav__link">Cardápio</a>
+    <a href="#como" class="mobile-nav__link">Como funciona</a>
+    <a href="#sobre" class="mobile-nav__link">Sobre</a>
+    <a href="#contato" class="mobile-nav__link">Contato</a>
+    <button class="btn btn--primary mobile-nav__install" id="btn-install-mobile" hidden>Instalar aplicativo</button>
+  </nav>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <div class="hero__status reveal in-view-delay-0" id="hero-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="status-text">Verificando horário…</span>
+          </div>
+          <h1 class="hero__title reveal">
+            Mini esfirras <span class="highlight">pescadinha</span> na hora, <span class="no-wrap">direto do forno 🔥</span>
+          </h1>
+          <p class="hero__subtitle reveal">
+            Massa artesanal de Receita sírio-libanesa, assada de 20 em 20 minutos.
+            Peça pelo WhatsApp e receba quentinho em casa — ou retire na loja.
+          </p>
+          <div class="hero__cta reveal">
+            <a class="btn btn--primary" href="#cardapio">
+              <span aria-hidden="true">🥟</span> Ver cardápio
+            </a>
+            <a class="btn btn--whatsapp" href="#" id="hero-whatsapp" target="_blank" rel="noopener">
+              <span aria-hidden="true">💬</span> Pedir agora
+            </a>
+          </div>
+          <dl class="hero__stats reveal">
+            <div class="stat">
+              <dt>Mini esfirras servidas</dt>
+              <dd><span data-count="320000" data-suffix="+">0</span></dd>
+            </div>
+            <div class="stat">
+              <dt>Anos com o forno aceso</dt>
+              <dd><span data-count="18">0</span></dd>
+            </div>
+            <div class="stat">
+              <dt>Nota dos clientes</dt>
+              <dd><span data-count="49" data-decimal="1" data-prefix="" data-suffix=" ★">0</span></dd>
+            </div>
+          </dl>
+        </div>
+        <div class="hero__art" aria-hidden="true">
+          <div class="hero__disc">
+            <div class="hero__esfirra">🥟</div>
+            <div class="hero__ring"></div>
+          </div>
+          <div class="chip-float chip-float--1">🧀 queijo</div>
+          <div class="chip-float chip-float--2">🌶️ calabresa</div>
+          <div class="chip-float chip-float--3">🍫 chocolate</div>
+          <div class="chip-float chip-float--4">✨ forno a lenha? quase: forno a gás de bar</div>
+        </div>
+      </div>
+      <div class="hero__wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 70" preserveAspectRatio="none"><path d="M0,40 C240,90 480,0 720,30 C960,60 1200,10 1440,45 L1440,70 L0,70 Z" fill="var(--crema)"></path></svg>
+      </div>
+    </section>
+
+    <section class="section section--menu" id="cardapio">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="section__eyebrow">Fresquinho, de fornada em fornada</span>
+          <h2 class="section__title">Cardápio do dia</h2>
+          <p class="section__subtitle">Recheio generoso, massa fina e dourada. Compre avulso, dezena ou kit de festa.</p>
+        </div>
+        <div class="menu-controls reveal">
+          <div class="chips" id="category-chips" role="tablist" aria-label="Categorias"></div>
+          <div class="search-wrap">
+            <span class="search-wrap__icon" aria-hidden="true">🔍</span>
+            <input type="search" id="search-input" class="search" placeholder="Buscar sabor… (ex.: carne, chocolate)" aria-label="Buscar no cardápio" />
+          </div>
+        </div>
+        <div class="grid-products" id="product-grid" aria-live="polite"></div>
+        <p class="empty-msg" id="empty-msg" hidden>😕 Nada encontrado. Tente outro sabor ou limpe a busca.</p>
+      </div>
+    </section>
+
+    <section class="section section--steps" id="como">
+      <div class="container">
+        <div class="section__head reveal">
+          <span class="section__eyebrow">Simples e rápido</span>
+          <h2 class="section__title">Como funciona</h2>
+        </div>
+        <ol class="steps">
+          <li class="step card reveal">
+            <span class="step__num">1</span>
+            <span class="step__emoji" aria-hidden="true">🛍️</span>
+            <h3>Escolha seus sabores</h3>
+            <p>Monte seu pedido aqui no site: avulso, dezena ou kit de festa.</p>
+          </li>
+          <li class="step card reveal">
+            <span class="step__num">2</span>
+            <span class="step__emoji" aria-hidden="true">💬</span>
+            <h3>Confirme no WhatsApp</h3>
+            <p>O pedido sai pronto com nome, itens e endereço. Você só envia!</p>
+          </li>
+          <li class="step card reveal">
+            <span class="step__num">3</span>
+            <span class="step__emoji" aria-hidden="true">🏠</span>
+            <h3>Receba ou retire</h3>
+            <p>Delivery em até 40 min na região ou retirada quentinha no balcão.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section section--about" id="sobre">
+      <div class="container about__inner">
+        <div class="about__content">
+          <div class="section__head section__head--left reveal">
+            <span class="section__eyebrow">Nossa história</span>
+            <h2 class="section__title">Massa fina, tradição síria e fogo em dia</h2>
+          </div>
+          <p class="reveal">
+            A Vila Esfirra nasceu em 2018, numa coxinha de forno emprestada, com a avó Lúcia abrindo massa à mão na mesa do quintal.
+            Hoje são três fornadas contínuas por dia — e cada mini esfirra continua aberta à mão, recheada na hora e assada com cuidado de comida de família.
+          </p>
+          <p class="reveal">
+            Sem conservantes, sem congelados: o que sobra no fim do dia vira doação no banco de alimentos da vila.
+          </p>
+          <ul class="about__list">
+            <li class="reveal"><span aria-hidden="true">👐</span> Massa aberta à mão, todos os dias</li>
+            <li class="reveal"><span aria-hidden="true">🌿</span> Ingredientes frescos e de feira</li>
+            <li class="reveal"><span aria-hidden="true">⏱️</span> Fornada a cada 20 minutos</li>
+            <li class="reveal"><span aria-hidden="true">🧾</span> Pedidos minímos: 10 unidades</li>
+          </ul>
+        </div>
+        <div class="about__info">
+          <div class="card info-card reveal">
+            <h3><span aria-hidden="true">📍</span> Onde estamos</h3>
+            <p>R. das Fornadas, 123 — Vila Madalena<br />São Paulo — SP</p>
+            <a class="link" href="#" id="maps-link" target="_blank" rel="noopener">Abrir no Google Maps →</a>
+          </div>
+          <div class="card info-card reveal">
+            <h3><span aria-hidden="true">🕖</span> Horários</h3>
+            <ul class="hours" id="hours-list"></ul>
+          </div>
+          <div class="card info-card reveal">
+            <h3><span aria-hidden="true">💳</span> Pagamento</h3>
+            <p>PIX, cartão de crédito/débito maquininha e dinheiro.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--contact" id="contato">
+      <div class="container contact__box reveal">
+        <h2>Com fome? 🤤</h2>
+        <p>Chama no WhatsApp que a fornada de agora já tem lugar marcado.</p>
+        <div class="contact__actions">
+          <a class="btn btn--whatsapp btn--lg" href="#" id="footer-whatsapp" target="_blank" rel="noopener">
+            <span aria-hidden="true">💬</span> (11) 91234-5678
+          </a>
+          <button class="btn btn--ghost btn--lg" id="btn-install-contact" hidden>📲 Instalar nosso app</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="#inicio" class="logo logo--footer">
+          <span class="logo__icon" aria-hidden="true">🔥</span>
+          <span class="logo__text">Vila <strong>Esfirra</strong></span>
+        </a>
+        <p>Mini esfirras artesanais de tradição sírio-libanesa. Assadas na hora desde <span id="footer-year"></span>.</p>
+        <p class="footer__status" id="footer-status">–</p>
+      </div>
+      <div class="footer__col">
+        <h3>Navegue</h3>
+        <a href="#cardapio">Cardápio</a>
+        <a href="#como">Como funciona</a>
+        <a href="#sobre">Sobre nós</a>
+        <a href="#contato">Contato</a>
+      </div>
+      <div class="footer__col">
+        <h3>Fale conosco</h3>
+        <a href="#" target="_blank" rel="noopener" id="footer-wa-2">WhatsApp: (11) 91234-5678</a>
+        <a href="mailto:oi@vilaesfirra.com.br">oi@vilaesfirra.com.br</a>
+        <a href="#" target="_blank" rel="noopener" id="footer-maps">R. das Fornadas, 123</a>
+      </div>
+      <div class="footer__col">
+        <h3>Instale</h3>
+        <p>Toque abaixo para levar a Vila para a tela inicial do seu telefone:</p>
+        <button class="btn btn--primary" id="btn-install-footer" hidden>📲 Instalar aplicativo</button>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="container">
+        <p>© <span id="footer-year-2"></span> Vila Esfirra · Feito com massa, farinha e muito queijo.</p>
+      </div>
+    </div>
+  </footer>
+
+  <button class="fab" id="fab-cart" hidden aria-label="Abrir carrinho">
+    <span aria-hidden="true">🛒</span>
+    <span class="fab__total" id="fab-total">R$ 0,00</span>
+  </button>
+
+  <div class="overlay" id="overlay" hidden></div>
+
+  <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" hidden>
+    <header class="cart-drawer__head">
+      <h2 id="cart-title">Seu pedido 🛒</h2>
+      <button class="cart-drawer__close" id="btn-cart-close" aria-label="Fechar carrinho">✕</button>
+    </header>
+    <div class="cart-drawer__body">
+      <ul class="cart-items" id="cart-items"></ul>
+      <p class="cart-empty" id="cart-empty">
+        <span aria-hidden="true">🥟</span><br />
+        Seu carrinho está vazio.<br />
+        <a href="#cardapio" id="link-go-menu" class="link">Escolher no cardápio →</a>
+      </p>
+      <div class="cart-summary" id="cart-summary" hidden>
+        <fieldset class="fulfillment">
+          <legend>Como quer receber?</legend>
+          <label class="pill radio-pill">
+            <input type="radio" name="fulfillment" value="delivery" id="opt-delivery" />
+            <span>🛵 Entrega <small>+ R$ 6,00</small></span>
+          </label>
+          <label class="pill radio-pill">
+            <input type="radio" name="fulfillment" value="pickup" id="opt-pickup" />
+            <span>🏃 Retirada <small>grátis</small></span>
+          </label>
+        </fieldset>
+        <form id="checkout-form">
+          <label class="field">
+            <span>Seu nome</span>
+            <input type="text" id="input-name" required placeholder="Como te chamamos?" autocomplete="name" />
+          </label>
+          <label class="field" id="field-address" hidden>
+            <span>Endereço de entrega</span>
+            <input type="text" id="input-address" placeholder="Rua, número, bairro e referência" />
+          </label>
+          <label class="field">
+            <span>Forma de pagamento</span>
+            <select id="input-payment">
+              <option value="PIX">PIX</option>
+              <option value="Cartão de crédito">Cartão de crédito</option>
+              <option value="Cartão de débito">Cartão de débito</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Observações</span>
+            <textarea id="input-notes" rows="2" placeholder="Ex.: sem cebola, troco para R$ 50…"></textarea>
+          </label>
+        </form>
+        <div class="totals">
+          <div class="totals__row"><span>Subtotal</span><span id="total-sub">R$ 0,00</span></div>
+          <div class="totals__row" id="row-fee"><span>Taxa de entrega</span><span id="total-fee">R$ 0,00</span></div>
+          <div class="totals__row totals__row--total"><span>Total</span><span id="total-grand">R$ 0,00</span></div>
+        </div>
+        <a class="btn btn--whatsapp btn--lg btn--block" href="#" id="btn-checkout">💬 Finalizar no WhatsApp</a>
+        <p class="cart-note">Você será direcionado ao WhatsApp com o pedido prontinho — é só apertar enviar.</p>
+      </div>
+    </div>
+  </aside>
+
+  <div class="toast-zone" id="toast-zone" role="status" aria-live="polite"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
