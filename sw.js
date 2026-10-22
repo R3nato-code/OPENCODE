@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSAO = 'quadro-v2';
+const VERSAO = 'quadro-v3';
 const PRINCIPAIS = [
   './',
   './index.html',

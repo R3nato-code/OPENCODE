@@ -380,6 +380,17 @@ a:hover { color: var(--verde-forte); }
 
 .lista-simples { display: flex; flex-direction: column; gap: .45rem; }
 
+.painel-detalhe {
+  margin: -.3rem 0 .35rem .4rem;
+  padding: .5rem .8rem;
+  border-left: 3px solid var(--verde-suave);
+  font-size: .86rem;
+  color: var(--tinta-suave);
+}
+
+.painel-detalhe p { margin: .3rem 0; }
+.painel-detalhe strong { color: var(--tinta); }
+
 .btn {
   border: 1px solid var(--borda);
   background: var(--carta);

@@ -13,6 +13,7 @@ const HORARIOS = [
 
 const RECREIO = { inicio: '09:45', fim: '10:10', min: 25 };
 const DIAS = ['', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+const DIAS_AB = ['', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const MATERIAS_COMUNS = [
   'Matemática', 'Língua Portuguesa', 'Física', 'Química', 'Biologia',
   'História', 'Geografia', 'Inglês', 'Artes', 'Ed. Física',
@@ -486,11 +487,15 @@ async function abaProfessores() {
     </form>
     <div class="lista-simples">
       ${professores.map(p => `
-        <div class="painel-item" data-prof="${p.id}">
-          <strong data-nome-prof>${esc(p.nome)}</strong>
-          <small>${p.aulas} aula${p.aulas === 1 ? '' : 's'}</small>
-          <button class="btn btn--mini" data-renomear="${p.id}">Renomear</button>
-          <button class="btn btn--mini btn--perigo" data-excluir-prof="${p.id}">Excluir</button>
+        <div>
+          <div class="painel-item" data-prof="${p.id}">
+            <strong data-nome-prof>${esc(p.nome)}</strong>
+            <small>${p.aulas} aula${p.aulas === 1 ? '' : 's'}</small>
+            <button class="btn btn--mini" data-ver-aulas="${p.id}">Ver aulas</button>
+            <button class="btn btn--mini" data-renomear="${p.id}">Renomear</button>
+            <button class="btn btn--mini btn--perigo" data-excluir-prof="${p.id}">Excluir</button>
+          </div>
+          <div class="painel-detalhe" data-detalhe="${p.id}" hidden></div>
         </div>`).join('')}
     </div>`;
 
@@ -502,6 +507,29 @@ async function abaProfessores() {
       abaProfessores();
     } catch (err) { toast(err.message, 'erro'); }
   };
+
+  corpo.querySelectorAll('[data-ver-aulas]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.verAulas;
+      const box = corpo.querySelector(`[data-detalhe="${id}"]`);
+      if (!box.hidden) { box.hidden = true; b.textContent = 'Ver aulas'; return; }
+      b.disabled = true;
+      try {
+        const r = await api(`/api/admin/professores/${id}/aulas`);
+        const porTurma = {};
+        for (const a of r.aulas) {
+          (porTurma[a.turma_nome] ??= []).push(`${DIAS_AB[a.dia]} ${a.ordem}ª (${a.materia || '—'})`);
+        }
+        box.innerHTML = r.aulas.length
+          ? Object.entries(porTurma).map(([turma, itens]) =>
+              `<p><strong>${esc(turma)}</strong> — ${itens.map(esc).join(' · ')}</p>`).join('')
+          : '<p>Sem aulas vinculadas. Este professor pode ser excluído sem impacto na grade.</p>';
+        box.hidden = false;
+        b.textContent = 'Fechar';
+      } catch (e) { toast(e.message, 'erro'); }
+      b.disabled = false;
+    };
+  });
 
   corpo.querySelectorAll('[data-renomear]').forEach(b => {
     b.onclick = () => {
@@ -584,6 +612,7 @@ async function abaAulas() {
                 ${listaProf.map(p => `<option value="${p.id}" ${aula.professor_id === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
               </select>
               <button class="btn btn--mini btn--primario" data-salvar title="Salvar matéria e professor">Salvar</button>
+              <button class="btn btn--mini" data-limpar title="Esvaziar esta aula (sem matéria, sem professor)">Limpar</button>
               <span class="editor-aula__status" data-status></span>
               <button class="btn btn--mini" data-mover="subir" ${h.ordem === 1 ? 'disabled' : ''} aria-label="Mover para cima">↑</button>
               <button class="btn btn--mini" data-mover="descer" ${h.ordem === 6 ? 'disabled' : ''} aria-label="Mover para baixo">↓</button>
@@ -605,12 +634,14 @@ async function abaAulas() {
     const inputMateria = linha.querySelector('[data-campo="materia"]');
     const inputProf = linha.querySelector('[data-campo="professor_id"]');
     const btnSalvar = linha.querySelector('[data-salvar]');
+    const btnLimpar = linha.querySelector('[data-limpar]');
     const status = linha.querySelector('[data-status]');
     const botaoMover = [...linha.querySelectorAll('[data-mover]')];
 
     const salvar = async () => {
       if (btnSalvar.disabled) return;
       btnSalvar.disabled = true;
+      btnLimpar.disabled = true;
       botaoMover.forEach(x => x.disabled = true);
       status.textContent = 'Salvando…';
       try {
@@ -628,10 +659,32 @@ async function abaAulas() {
         toast(e.message, 'erro');
       }
       btnSalvar.disabled = false;
+      btnLimpar.disabled = false;
+      botaoMover.forEach(x => x.disabled = false);
+    };
+
+    const limpar = async () => {
+      if (btnLimpar.disabled) return;
+      btnSalvar.disabled = true;
+      btnLimpar.disabled = true;
+      botaoMover.forEach(x => x.disabled = true);
+      try {
+        await api(`/api/admin/aulas/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ materia: '', professor_id: '' })
+        });
+        inputMateria.value = '';
+        inputProf.value = '';
+        status.textContent = 'Limpo ✓';
+        setTimeout(() => { status.textContent = ''; }, 2500);
+      } catch (e) { toast(e.message, 'erro'); }
+      btnSalvar.disabled = false;
+      btnLimpar.disabled = false;
       botaoMover.forEach(x => x.disabled = false);
     };
 
     btnSalvar.onclick = salvar;
+    btnLimpar.onclick = limpar;
     inputMateria.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); salvar(); } };
     inputProf.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); salvar(); } };
 

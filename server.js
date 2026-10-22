@@ -248,6 +248,18 @@ app.delete('/api/admin/professores/:id', exigirAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/admin/professores/:id/aulas', exigirAdmin, (req, res) => {
+  const prof = db.prepare('SELECT id, nome FROM professores WHERE id = ?').get(Number(req.params.id));
+  if (!prof) return res.status(404).json({ erro: 'Professor não encontrado.' });
+  const aulas = db.prepare(`
+    SELECT a.dia, a.ordem, a.materia, t.nome AS turma_nome
+      FROM aulas a JOIN turmas t ON t.id = a.turma_id
+     WHERE a.professor_id = ?
+     ORDER BY t.tipo, t.nome, a.dia, a.ordem
+  `).all(prof.id);
+  res.json({ professor: prof, aulas });
+});
+
 app.post('/api/admin/turmas', exigirAdmin, (req, res) => {
   const nome = String(req.body?.nome || '').trim();
   const tipo = req.body?.tipo;
