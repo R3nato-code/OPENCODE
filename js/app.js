@@ -1,659 +1,644 @@
-const CONFIG = {
-  storeName: "Vila Esfirra",
-  whatsapp: "5511912345678",
-  phoneDisplay: "(11) 91234-5678",
-  address: "R. das Fornadas, 123 — Vila Madalena, São Paulo",
-  addressUrl: "https://maps.google.com/?q=Vila+Madalena+S%C3%A3o+Paulo",
-  deliveryFee: 6,
-  foundedYear: "2018",
-  dayNames: ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"],
-  hours: {
-    0: { open: 10, close: 15 },
-    1: null,
-    2: { open: 10, close: 22 },
-    3: { open: 10, close: 22 },
-    4: { open: 10, close: 22 },
-    5: { open: 10, close: 22 },
-    6: { open: 10, close: 22 }
+'use strict';
+
+// ---------------------------------------------------------------- constantes
+
+const HORARIOS = [
+  { ordem: 1, inicio: '07:20', fim: '08:10', min: 50 },
+  { ordem: 2, inicio: '08:10', fim: '09:00', min: 50 },
+  { ordem: 3, inicio: '09:00', fim: '09:45', min: 45 },
+  { ordem: 4, inicio: '10:10', fim: '10:55', min: 45 },
+  { ordem: 5, inicio: '10:55', fim: '11:45', min: 50 },
+  { ordem: 6, inicio: '11:45', fim: '12:30', min: 45 }
+];
+
+const RECREIO = { inicio: '09:45', fim: '10:10', min: 25 };
+const DIAS = ['', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+const MATERIAS_COMUNS = [
+  'Matemática', 'Língua Portuguesa', 'Física', 'Química', 'Biologia',
+  'História', 'Geografia', 'Inglês', 'Artes', 'Ed. Física',
+  'Filosofia', 'Sociologia', 'Redação'
+];
+
+const $view = document.getElementById('view');
+const $topo = document.getElementById('topo');
+const estado = { me: null };
+
+// ---------------------------------------------------------------- helpers
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function toast(msg, tipo = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${tipo ? 'toast--' + tipo : ''}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    credentials: 'same-origin',
+    headers: opts.body ? { 'Content-Type': 'application/json' } : {},
+    ...opts
+  });
+  let dados = null;
+  try { dados = await res.json(); } catch { /* sem corpo */ }
+  if (!res.ok) {
+    throw new Error((dados && dados.erro) || 'Não foi possível concluir a operação.');
   }
-};
-
-const PRODUCTS = [
-  { id: "carne", name: "Carne temperada", emoji: "🥟", price: 4.5, category: "salgadas", desc: "Moída na hora com o tempero da avó Lúcia: hortelã, limão e cebola roxa.", tags: ["mais vendida"] },
-  { id: "frango", name: "Frango com catupiry", emoji: "🍗", price: 5, category: "salgadas", desc: "Peito desfiado na panela com requeijão cremoso de verdade.", tags: [] },
-  { id: "queijo", name: "Queijo três leites", emoji: "🧀", price: 4.5, category: "salgadas", desc: "Muçarela, provolone e parmesão gratinados na borda da massa.", tags: ["vegetariano"], veg: true },
-  { id: "calabresa", name: "Calabresa e queijo", emoji: "🌶️", price: 5, category: "salgadas", desc: "Calabresa artesanal tostada no forno com muçarela e cheiro-verde.", tags: [] },
-  { id: "pizza", name: "Pizza", emoji: "🍕", price: 4.5, category: "salgadas", desc: "Tomate, mussarela, orégano e um fio de azeite — favorita do fim de tarde.", tags: [], veg: true },
-  { id: "escarola", name: "Escarola com bacon", emoji: "🥬", price: 5.5, category: "salgadas", desc: "Escarola refogada no alho, bacon crocante e um toque de pimenta.", tags: ["novo"] },
-  { id: "doce-morango", name: "Chocolate com morango", emoji: "🍫", price: 5.5, category: "doces", desc: "Chocolate ao leite derretido, morangos picados e açúcar de confeiteiro.", tags: ["novo"] },
-  { id: "doce-banana", name: "Banana com canela", emoji: "🍌", price: 5, category: "doces", desc: "Banana caramelizada, canela do Ceilão e um fio de mel.", tags: [] },
-  { id: "doce-rj", name: "Romeu e Julieta", emoji: "🍯", price: 5.5, category: "doces", desc: "Goiabada cascão derretida com queijo minas curado.", tags: [], veg: true },
-  { id: "combo-dezena-carne", name: "Dezena de carne", emoji: "📦", price: 48, category: "combos", desc: "12 minis de carne temperada. Quem leva, volta pra repetir.", tags: ["economize 12%"] },
-  { id: "combo-dezena-mix", name: "Dezena variada", emoji: "🎁", price: 50, category: "combos", desc: "12 minis sortidas: carne, queijo, calabresa e pizza.", tags: ["queridinha das famílias"] },
-  { id: "combo-party", name: "Kit festa 50 un.", emoji: "🎉", price: 175, category: "combos", desc: "50 minis variadas em caixa térmica. Para aniversário ou sexta da firma.", tags: ["encomende 24h antes"] },
-  { id: "refri-lata", name: "Refrigerante lata", emoji: "🥤", price: 6, category: "bebidas", desc: "Cola ou guaraná, geladinho — 350 ml.", tags: [] },
-  { id: "suco", name: "Suco de laranja natural", emoji: "🧃", price: 7, category: "bebidas", desc: "Espremido na hora, 500 ml, sem açúcar.", tags: [], veg: true },
-  { id: "agua", name: "Água mineral", emoji: "💧", price: 3.5, category: "bebidas", desc: "Com gás ou sem gás, 500 ml.", tags: [] }
-];
-
-const CATEGORIES = [
-  { id: "all", label: "Tudo" },
-  { id: "salgadas", label: "🥟 Salgadas" },
-  { id: "doces", label: "🍫 Doces" },
-  { id: "combos", label: "📦 Combos" },
-  { id: "bebidas", label: "🥤 Bebidas" }
-];
-
-const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
-const state = {
-  cart: new Map(),
-  category: "all",
-  search: "",
-  fulfillment: "delivery"
-};
-
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-
-const el = {};
-
-function grabElements() {
-  el.header = $("#header");
-  el.cartBtn = $("#btn-cart");
-  el.badge = $("#cart-badge");
-  el.grid = $("#product-grid");
-  el.chips = $("#category-chips");
-  el.search = $("#search-input");
-  el.empty = $("#empty-msg");
-  el.drawer = $("#cart-drawer");
-  el.overlay = $("#overlay");
-  el.cartItems = $("#cart-items");
-  el.cartEmpty = $("#cart-empty");
-  el.summary = $("#cart-summary");
-  el.checkout = $("#btn-checkout");
-  el.toastZone = $("#toast-zone");
-  el.fab = $("#fab-cart");
-  el.fabTotal = $("#fab-total");
-  el.statusText = $("#status-text");
-  el.heroStatus = $("#hero-status");
-  el.footerStatus = $("#footer-status");
-  el.hoursList = $("#hours-list");
-  el.mobileNav = $("#mobile-nav");
-  el.menuBtn = $("#btn-menu");
+  return dados;
 }
 
-function saveCart() {
-  localStorage.setItem("vila-esfirra-cart", JSON.stringify([...state.cart]));
+function matizDe(texto) {
+  let h = 0;
+  for (let i = 0; i < texto.length; i++) h = (h * 31 + texto.charCodeAt(i)) % 360;
+  return h;
 }
 
-function loadCart() {
+function diaSemanaHoje() {
+  const d = new Date().getDay();
+  return d >= 1 && d <= 5 ? d : 1;
+}
+
+// ---------------------------------------------------------------- header
+
+function renderTopo() {
+  const rota = location.hash || '#/turmas';
+  const link = (href, texto) =>
+    `<a href="${href}" class="${rota.startsWith(href) ? 'ativo' : ''}">${texto}</a>`;
+  const me = estado.me;
+
+  let nav = '';
+  if (me && me.papel === 'admin') nav += link('#/admin', 'Painel');
+  nav += `<a href="#/turmas" class="${rota.startsWith('#/turmas') || rota.startsWith('#/grade') ? 'ativo' : ''}">Turmas</a>`;
+
+  $topo.innerHTML = `
+    <div class="topo__inner">
+      <a class="marca" href="#/turmas" aria-label="Quadro Escolar — início">
+        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+          <rect x="1" y="1" width="24" height="24" rx="6" fill="#fff" opacity=".16"/>
+          <rect x="5" y="5" width="9" height="6" rx="2" fill="#fff"/>
+          <rect x="16" y="5" width="5" height="6" rx="2" fill="#e8a535"/>
+          <rect x="5" y="14" width="5" height="6" rx="2" fill="#fff" opacity=".7"/>
+          <rect x="12" y="14" width="9" height="6" rx="2" fill="#fff"/>
+        </svg>
+        <span>Quadro Escolar</span>
+      </a>
+      <nav class="topo__nav" aria-label="Navegação">${nav}</nav>
+      <div class="topo__fim">
+        <button id="btn-instalar" class="btn-instalar" hidden>Instalar</button>
+        ${me ? `
+          <div class="quem"><strong>${esc(me.nome)}</strong><span>${me.papel === 'admin' ? 'Administração' : 'Aluno' + (me.turma_nome ? ' · ' + esc(me.turma_nome) : '')}</span></div>
+          <button class="btn-sair" id="btn-sair">Sair</button>` : ''}
+      </div>
+    </div>`;
+
+  const sair = document.getElementById('btn-sair');
+  if (sair) sair.onclick = async () => {
+    await api('/api/auth/logout', { method: 'POST' });
+    estado.me = null;
+    location.hash = '#/login';
+    rotear();
+  };
+
+  configurarInstalacao();
+}
+
+// ---------------------------------------------------------------- router
+
+window.addEventListener('hashchange', rotear);
+
+async function rotear() {
+  const url = location.hash || '#/turmas';
+  renderTopo();
+  $view.innerHTML = '<div class="carregando">Carregando…</div>';
+
   try {
-    const raw = JSON.parse(localStorage.getItem("vila-esfirra-cart") || "[]");
-    raw.forEach(([id, qty]) => {
-      if (Number.isInteger(qty) && qty > 0 && PRODUCTS.some((p) => p.id === id)) {
-        state.cart.set(id, qty);
-      }
-    });
-  } catch {
-    state.cart.clear();
+    const mGrade = url.match(/^#\/grade\/(\d+)\?dia=(\d+)$/);
+    const mAdmin = url.match(/^#\/admin\/(\w+)$/);
+
+    if (url === '#/login') return telaLogin();
+    if (url === '#/registrar') return telaRegistro();
+    if (mGrade) return await telaGrade(+mGrade[1], +mGrade[2]);
+    if (mAdmin) return await telaAdmin(mAdmin[1]);
+    return await telaTurmas();
+  } catch (e) {
+    $view.innerHTML = `<div class="mensagem ${e.message.includes('login') ? '' : 'mensagem--erro'}">${esc(e.message)}</div>`;
   }
 }
 
-function cartEntries() {
-  return [...state.cart]
-    .map(([id, qty]) => ({ product: PRODUCTS.find((p) => p.id === id), qty }))
-    .filter((entry) => entry.product);
+function exigirPerfil(papel) {
+  if (!estado.me) { location.hash = '#/login'; throw new Error('Faça login para continuar.'); }
+  if (papel && estado.me.papel !== papel) { location.hash = '#/turmas'; throw new Error('Acesso restrito à administração.'); }
 }
 
-function cartCount() {
-  return cartEntries().reduce((acc, entry) => acc + entry.qty, 0);
-}
+// ---------------------------------------------------------------- login / registro
 
-function cartSubtotal() {
-  return cartEntries().reduce((acc, entry) => acc + entry.product.price * entry.qty, 0);
-}
-
-function cartIsOpen() {
-  return !el.drawer.hidden;
-}
-
-function toast(message) {
-  const node = document.createElement("div");
-  node.className = "toast";
-  node.textContent = message;
-  el.toastZone.appendChild(node);
-  setTimeout(() => {
-    node.classList.add("hide");
-    node.addEventListener("animationend", () => node.remove(), { once: true });
-  }, 2600);
-}
-
-function updateCartUI(bounce = false) {
-  const count = cartCount();
-  el.badge.hidden = count === 0;
-  el.badge.textContent = count > 99 ? "99+" : count;
-  if (bounce && count > 0) {
-    el.cartBtn.classList.remove("bounce");
-    void el.cartBtn.offsetWidth;
-    el.cartBtn.classList.add("bounce");
-  }
-
-  el.cartItems.innerHTML = "";
-  cartEntries().forEach(({ product, qty }, index) => {
-    const li = document.createElement("li");
-    li.className = "cart-item";
-    li.style.animationDelay = `${index * 40}ms`;
-    li.dataset.id = product.id;
-    li.innerHTML = `
-      <span class="cart-item__emoji" aria-hidden="true">${product.emoji}</span>
-      <div class="cart-item__info">
-        <h4>${product.name}</h4>
-        <span>${money.format(product.price)} · un.</span>
+function telaLogin() {
+  $view.innerHTML = `
+    <div class="aut-box">
+      <div class="aut-cartao">
+        <div class="aut-cartao__marca">
+          <h1>Bem-vindo de volta</h1>
+          <p>Consulte os horários das suas aulas.</p>
+        </div>
+        <form id="form-login" novalidate>
+          <label class="campo"><span>Usuário</span>
+            <input name="usuario" autocomplete="username" required maxlength="20" />
+          </label>
+          <label class="campo"><span>Senha</span>
+            <input name="senha" type="password" autocomplete="current-password" required maxlength="72" />
+          </label>
+          <p class="erro-form" id="erro-login"></p>
+          <button class="btn btn--primario" type="submit">Entrar</button>
+        </form>
+        <p class="aut-rodape">Ainda não tem conta? <a href="#/registrar">Registre-se</a></p>
+        <div class="dica-admin">Conta da coordenação: <strong>admin</strong> · senha <strong>admin123</strong> (troque após o primeiro acesso).</div>
       </div>
-      <div class="cart-item__qty">
-        <button class="qty-btn" data-action="minus" aria-label="Diminuir quantidade de ${product.name}">−</button>
-        <b aria-label="${qty} unidades">${qty}</b>
-        <button class="qty-btn" data-action="plus" aria-label="Aumentar quantidade de ${product.name}">+</button>
-        <button class="qty-btn qty-btn--remove" data-action="remove" aria-label="Remover ${product.name}">🗑</button>
-      </div>`;
-    el.cartItems.appendChild(li);
-  });
+    </div>`;
 
-  const hasItems = cartEntries().length > 0;
-  el.cartEmpty.hidden = hasItems;
-  el.summary.hidden = !hasItems;
-
-  const sub = cartSubtotal();
-  const fee = hasItems && state.fulfillment === "delivery" ? CONFIG.deliveryFee : 0;
-  $("#total-sub").textContent = money.format(sub);
-  $("#total-fee").textContent = fee ? money.format(fee) : "Grátis";
-  $("#row-fee").style.display = state.fulfillment === "delivery" ? "flex" : "none";
-  $("#total-grand").textContent = money.format(sub + fee);
-
-  const fabOk = count > 0 && window.scrollY > 500 && !cartIsOpen();
-  if (fabOk && el.fab.hidden) {
-    el.fab.hidden = false;
-    el.fab.style.animation = "";
-  } else {
-    el.fab.hidden = !fabOk;
-  }
-  el.fabTotal.textContent = money.format(sub + fee);
-  saveCart();
-}
-
-function addToCart(id) {
-  const product = PRODUCTS.find((p) => p.id === id);
-  if (!product) return;
-  state.cart.set(id, (state.cart.get(id) || 0) + 1);
-  updateCartUI(true);
-  toast(`${product.emoji} ${product.name} adicionada ao carrinho!`);
-}
-
-function changeQty(id, delta) {
-  const next = (state.cart.get(id) || 0) + delta;
-  if (next <= 0) state.cart.delete(id);
-  else state.cart.set(id, next);
-  updateCartUI();
-}
-
-function removeItem(id, li) {
-  if (!li) {
-    state.cart.delete(id);
-    updateCartUI();
-    return;
-  }
-  li.classList.add("remove");
-  li.addEventListener("animationend", () => {
-    state.cart.delete(id);
-    updateCartUI();
-  }, { once: true });
-}
-
-function tagClass(tag) {
-  if (/vég|veget|veg$/i.test(tag) || /economize/i.test(tag)) return tag.includes("economize") ? "tag" : "tag tag--veg";
-  if (/novo/i.test(tag)) return "tag tag--new";
-  return "tag";
-}
-
-function filteredProducts() {
-  const query = state.search.trim().toLowerCase();
-  if (!query) return PRODUCTS.filter((p) => state.category === "all" || p.category === state.category);
-  return PRODUCTS.filter((p) => {
-    const inCategory = state.category === "all" || p.category === state.category;
-    const haystack = `${p.name} ${p.desc} ${p.category}`.toLowerCase();
-    return inCategory && haystack.includes(query);
-  });
-}
-
-function renderChips() {
-  el.chips.innerHTML = "";
-  CATEGORIES.forEach((cat, index) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `chip${state.category === cat.id ? " active" : ""}`;
-    btn.textContent = cat.label;
-    btn.setAttribute("role", "tab");
-    btn.setAttribute("aria-selected", String(state.category === cat.id));
-    btn.style.setProperty("--d", `${index * 50}ms`);
-    btn.addEventListener("click", () => {
-      state.category = cat.id;
-      $$("button", el.chips).forEach((chip) => {
-        const active = chip === btn;
-        chip.classList.toggle("active", active);
-        chip.setAttribute("aria-selected", String(active));
-      });
-      renderProducts();
-    });
-    el.chips.appendChild(btn);
-  });
-  observeReveals(el.chips);
-}
-
-function renderProducts() {
-  const items = filteredProducts();
-  el.grid.innerHTML = "";
-  el.empty.hidden = items.length > 0;
-  items.forEach((product, index) => {
-    const card = document.createElement("article");
-    card.className = "product reveal";
-    card.style.setProperty("--d", `${Math.min(index, 8) * 60}ms`);
-    card.innerHTML = `
-      <span class="product__emoji" aria-hidden="true">${product.emoji}</span>
-      <div class="product__tags">
-        ${product.tags.filter(Boolean).map((tag) => `<span class="${tagClass(tag)}">${tag}</span>`).join("")}
-      </div>
-      <h3>${product.name}</h3>
-      <p class="product__desc">${product.desc}</p>
-      <div class="product__foot">
-        <span class="product__price">${money.format(product.price)}</span>
-        <button class="add-btn" data-add="${product.id}" aria-label="Adicionar ${product.name} ao carrinho" title="Adicionar ao carrinho">+</button>
-      </div>`;
-    el.grid.appendChild(card);
-  });
-  observeReveals(el.grid);
-}
-
-function openCart() {
-  el.drawer.hidden = false;
-  el.overlay.hidden = false;
-  requestAnimationFrame(() => {
-    el.drawer.classList.add("show");
-    el.overlay.classList.add("show");
-  });
-  document.body.classList.add("no-scroll");
-  el.cartBtn.setAttribute("aria-expanded", "true");
-  el.fab.hidden = true;
-}
-
-function closeCart() {
-  if (cartIsOpen()) {
-    el.drawer.classList.remove("show");
-    el.overlay.classList.remove("show");
-    el.cartBtn.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("no-scroll");
-    setTimeout(() => {
-      el.drawer.hidden = true;
-      el.overlay.hidden = true;
-    }, 380);
-    updateCartUI();
-  }
-  el.mobileNav.classList.remove("open");
-  el.menuBtn.classList.remove("open");
-  el.menuBtn.setAttribute("aria-expanded", "false");
-}
-
-function closeMobileNav() {
-  el.mobileNav.classList.remove("open");
-  el.menuBtn.classList.remove("open");
-  el.menuBtn.setAttribute("aria-expanded", "false");
-  el.overlay.hidden = true;
-  el.overlay.classList.remove("show");
-  document.body.classList.remove("no-scroll");
-}
-
-function openMobileNav() {
-  el.overlay.hidden = false;
-  requestAnimationFrame(() => el.overlay.classList.add("show"));
-  el.mobileNav.classList.add("open");
-  el.menuBtn.classList.add("open");
-  el.menuBtn.setAttribute("aria-expanded", "true");
-  document.body.classList.add("no-scroll");
-}
-
-function buildWhatsAppLink(text) {
-  return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(text)}`;
-}
-
-function checkout() {
-  const entries = cartEntries();
-  if (!entries.length) {
-    toast("Seu carrinho está vazio 🙂");
-    return;
-  }
-  const name = $("#input-name").value.trim();
-  const isDelivery = state.fulfillment === "delivery";
-  const address = $("#input-address").value.trim();
-  if (!name) {
-    toast("Preencha seu nome para continuar 🙏");
-    $("#input-name").focus();
-    return;
-  }
-  if (isDelivery && !address) {
-    toast("Precisamos do endereço para a entrega 🛵");
-    $("#input-address").focus();
-    return;
-  }
-  const fee = isDelivery ? CONFIG.deliveryFee : 0;
-  const payment = $("#input-payment").value;
-  const notes = $("#input-notes").value.trim();
-  const lines = [
-    `*NOVO PEDIDO — ${CONFIG.storeName}* 🥟`,
-    "",
-    ...entries.map(
-      ({ product, qty }) =>
-        `• ${qty}x ${product.name} — ${money.format(product.price * qty)}`
-    ),
-    "",
-    `Subtotal: ${money.format(cartSubtotal())}`,
-    isDelivery ? `Entrega: ${money.format(fee)}` : "Retirada no balcão (grátis)",
-    `*Total: ${money.format(cartSubtotal() + fee)}*`,
-    `Pagamento: ${payment}`,
-    "",
-    `*Nome:* ${name}`,
-    isDelivery ? `*Endereço:* ${address}` : `*Retirada:* ${CONFIG.address}`
-  ];
-  if (notes) lines.push(`*Observações:* ${notes}`);
-  window.open(buildWhatsAppLink(lines.join("\n")), "_blank", "noopener");
-}
-
-function nextOpenLabel(now) {
-  const day = now.getDay();
-  const hourNow = now.getHours() + now.getMinutes() / 60;
-  const today = CONFIG.hours[day];
-  if (today && hourNow < today.open) return `abrimos hoje às ${today.open}h`;
-  for (let i = 1; i <= 7; i++) {
-    const target = CONFIG.hours[(day + i) % 7];
-    if (target) {
-      const dayName = CONFIG.dayNames[(day + i) % 7];
-      return `abrimos ${i === 1 ? "amanhã" : dayName.toLowerCase()} às ${target.open}h`;
+  document.getElementById('form-login').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    document.getElementById('erro-login').textContent = '';
+    try {
+      await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ usuario: f.usuario.value.trim(), senha: f.senha.value }) });
+      await carregarSessao();
+      location.hash = estado.me.papel === 'admin' ? '#/admin/turmas' : '#/turmas';
+      rotear();
+    } catch (err) {
+      document.getElementById('erro-login').textContent = err.message;
     }
-  }
-  return "";
+  };
 }
 
-function checkOpen() {
-  const now = new Date();
-  const today = CONFIG.hours[now.getDay()];
-  const hourNow = now.getHours() + now.getMinutes() / 60;
-  const isOpen = !!today && hourNow >= today.open && hourNow < today.close;
-  const text = isOpen ? "Aberto agora — fornada saindo!" : `Fechado — ${nextOpenLabel(now)}`;
-  el.statusText.textContent = text;
-  el.heroStatus.classList.toggle("closed", !isOpen);
-  el.footerStatus.textContent = isOpen ? "🟢 Aberto agora — peça já!" : `🔴 Fechado — ${nextOpenLabel(now)}`;
-}
+function telaRegistro() {
+  $view.innerHTML = `
+    <div class="aut-box">
+      <div class="aut-cartao">
+        <div class="aut-cartao__marca">
+          <h1>Criar conta de aluno</h1>
+          <p>Kits de acesso são criados pela coordenação.</p>
+        </div>
+        <form id="form-registro" novalidate>
+          <label class="campo"><span>Nome completo</span>
+            <input name="nome" required maxlength="60" autocomplete="name" />
+          </label>
+          <label class="campo"><span>Usuário</span>
+            <input name="usuario" required maxlength="20" autocomplete="username" />
+          </label>
+          <label class="campo"><span>Senha (mín. 6)</span>
+            <input name="senha" type="password" required maxlength="72" autocomplete="new-password" />
+          </label>
+          <label class="campo"><span>Turma (opcional)</span>
+            <select name="turma_id" data-lista-turmas></select>
+          </label>
+          <p class="erro-form" id="erro-registro"></p>
+          <button class="btn btn--primario" type="submit">Criar conta</button>
+        </form>
+        <p class="aut-rodape">Já tem conta? <a href="#/login">Entrar</a></p>
+      </div>
+    </div>`;
 
-function renderHours() {
-  el.hoursList.innerHTML = "";
-  const today = new Date().getDay();
-  CONFIG.dayNames.forEach((dayName, index) => {
-    const hours = CONFIG.hours[index];
-    const li = document.createElement("li");
-    if (index === today) li.classList.add("today");
-    const label = index === today ? `Hoje (${dayName})` : dayName;
-    const value = hours ? `${hours.open}h – ${hours.close}h` : "fechado";
-    li.innerHTML = `<span>${label}</span><span>${value}</span>`;
-    el.hoursList.appendChild(li);
+  api('/api/turmas').then(turmas => {
+    const sel = document.querySelector('[data-lista-turmas]');
+    sel.innerHTML = '<option value="">— sem turma —</option>' + turmas.map(t =>
+      `<option value="${t.id}">${esc(t.nome)}</option>`).join('');
   });
+
+  document.getElementById('form-registro').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    document.getElementById('erro-registro').textContent = '';
+    try {
+      await api('/api/auth/registro', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: f.nome.value.trim(),
+          usuario: f.usuario.value.trim(),
+          senha: f.senha.value,
+          turma_id: f.turma_id.value
+        })
+      });
+      toast('Conta criada! Faça login.', 'ok');
+      location.hash = '#/login';
+      rotear();
+    } catch (err) {
+      document.getElementById('erro-registro').textContent = err.message;
+    }
+  };
 }
 
-let revealObserver = null;
-function observeReveals(root = document) {
-  if (!("IntersectionObserver" in window)) {
-    $$(".reveal", root).forEach((node) => node.classList.add("in-view"));
-    return;
-  }
-  if (!revealObserver) {
-    revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("in-view");
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
-  }
-  $$(".reveal:not(.in-view)", root).forEach((node) => revealObserver.observe(node));
-}
+// ---------------------------------------------------------------- turmas
 
-function initCounters() {
-  const counters = $$(".stat [data-count]");
-  if (!counters.length) return;
-  const animate = (node) => {
-    const target = Number(node.dataset.count);
-    const suffix = node.dataset.suffix || "";
-    const decimals = Number(node.dataset.decimal || 0);
-    const format = (value) =>
-      decimals
-        ? (value / 10).toFixed(decimals).replace(".", ",")
-        : Math.round(value).toLocaleString("pt-BR");
-    const start = performance.now();
-    const duration = 1800;
-    const tick = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      node.textContent = format(target * eased) + suffix;
-      if (progress < 1) requestAnimationFrame(tick);
+async function telaTurmas() {
+  const turmas = await api('/api/turmas');
+  const me = estado.me;
+  const favoritas = turmas.filter(t => t.favorita);
+  const comuns = turmas.filter(t => !t.favorita);
+
+  const cartao = t => `
+    <div class="cartao-turma-wrap">
+      <a class="cartao-turma" href="#/grade/${t.id}?dia=${diaSemanaHoje()}">
+        <span class="cartao-turma__nome">${esc(t.nome)}</span><br />
+        <span class="cartao-turma__tipo ${t.tipo === 'medio' ? 'tipo-medio' : 'tipo-tecnico'}">${t.tipo === 'medio' ? 'Ens. Médio' : 'Técnico'}</span>
+        <p class="cartao-turma__aulas">${t.aulas_preenchidas} aulas na semana</p>
+      </a>
+      <button class="btn-estrela ${t.favorita ? 'cheio' : ''}" data-fav="${t.id}"
+              aria-label="${t.favorita ? 'Remover' : 'Adicionar'} aos favoritos">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.4 6.2 20.3l1.1-6.4L2.6 9.3l6.5-.9L12 2.5z"/>
+        </svg>
+      </button>
+    </div>`;
+
+  $view.innerHTML = `
+    <div class="cabec">
+      <div>
+        <h1>Turmas</h1>
+        <p>${me ? 'Toque em uma turma para ver a grade da semana.' : 'Faça login para favoritar turmas.'}</p>
+      </div>
+    </div>
+    ${favoritas.length ? `
+      <h2 class="secao-titulo">Favoritas</h2>
+      <div class="grid-turmas">${favoritas.map(cartao).join('')}</div>
+      <h2 class="secao-titulo">Todas as turmas</h2>` :
+      (me ? `<div class="mensagem">Nenhuma turma favorita ainda — toque na estrela ☆ de uma turma para fixá-la aqui.</div>
+            <h2 class="secao-titulo">Todas as turmas</h2>` : '')}
+    <div class="grid-turmas">${comuns.map(cartao).join('')}</div>`;
+
+  $view.querySelectorAll('[data-fav]').forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await api(`/api/favoritos/${btn.dataset.fav}`, { method: 'POST' });
+        await carregarSessao();
+        rotear();
+      } catch (e) {
+        toast(e.message.includes('login') ? 'Faça login para favoritar.' : e.message, 'erro');
+      }
     };
-    requestAnimationFrame(tick);
-  };
-  if (!("IntersectionObserver" in window)) {
-    counters.forEach(animate);
-    return;
-  }
-  const counterObserver = new IntersectionObserver(
-    (entries, obs) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          animate(entry.target);
-          obs.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.6 }
-  );
-  counters.forEach((node) => counterObserver.observe(node));
+  });
 }
 
-function initScrollHeader() {
-  const onScroll = () => {
-    el.header.classList.toggle("scrolled", window.scrollY > 10);
-    if (cartCount() > 0 && !cartIsOpen()) {
-      const show = window.scrollY > 500;
-      if (show && el.fab.hidden) {
-        el.fab.hidden = false;
-        el.fab.style.animation = "";
-        void el.fab.offsetWidth;
-      } else if (!show) {
-        el.fab.hidden = true;
-      }
-    }
+// ---------------------------------------------------------------- grade
+
+async function telaGrade(turmaId, dia) {
+  dia = Math.min(Math.max(dia, 1), 5);
+  const dados = await api(`/api/grade/${turmaId}`);
+  const favorita = await (async () => {
+    const turmas = await api('/api/turmas');
+    const t = turmas.find(x => x.id === dados.id);
+    return t ? t.favorita : false;
+  })();
+
+  $view.innerHTML = `
+    <a class="voltar" href="#/turmas">&larr; Turmas</a>
+    <div class="cabec">
+      <div>
+        <h1>Turma ${esc(dados.nome)}</h1>
+        <p>${dados.tipo === 'medio' ? 'Ensino Médio' : 'Período Técnico'} · ${DIAS[dia]}</p>
+      </div>
+      ${estado.me ? `
+        <button class="btn btn--mini btn-estrela--inline" data-fav-topo="${dados.id}" aria-label="Favoritar turma">
+          ${favorita ? '&starf; Favorita' : '&star; Favoritar'}
+        </button>` : ''}
+    </div>
+    <div class="abas-dias" role="tablist" aria-label="Dias da semana">
+      ${DIAS.slice(1).map((nome, i) =>
+        `<button data-dia="${i + 1}" role="tab" class="${i + 1 === dia ? 'ativo' : ''}">${nome.replace('-feira', '')}</button>`).join('')}
+    </div>
+    <div class="lista-aulas">
+      ${HORARIOS.map((h, i) => {
+        const aula = dados.grade[dia].find(a => a.ordem === h.ordem);
+        const matiz = aula && aula.materia ? matizDe(aula.materia) : 0;
+        const vazia = !aula || !aula.materia;
+        const bloco = `
+          <div class="aula ${vazia ? 'aula--vazia' : ''}">
+            <div class="aula__hora">
+              ${h.inicio}<small>${h.min} min</small>
+            </div>
+            <div class="aula__cartao" style="--matiz:${matiz}">
+              <div>
+                <div class="aula__materia">${vazia ? 'Sem aula marcada' : esc(aula.materia)}</div>
+                ${vazia ? '' : (aula.professor ? `<div class="aula__professor">${esc(aula.professor)}</div>` : '<div class="aula__professor">—</div>')}
+              </div>
+              <span class="aula__ordem">${h.ordem}ª aula</span>
+            </div>
+          </div>`;
+        return i === 3
+          ? `<div class="recreio">Intervalo · ${RECREIO.inicio} – ${RECREIO.fim}</div>${bloco}` : bloco;
+      }).join('')}
+    </div>`;
+
+  const abas = $view.querySelectorAll('[data-dia]');
+  abas.forEach(b => b.onclick = () => { location.hash = `#/grade/${turmaId}?dia=${b.dataset.dia}`; });
+
+  const fav = $view.querySelector('[data-fav-topo]');
+  if (fav) fav.onclick = async () => {
+    try {
+      await api(`/api/favoritos/${dados.id}`, { method: 'POST' });
+      rotear();
+    } catch (e) { toast(e.message, 'erro'); }
   };
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
 }
 
-function initScrollSpy() {
-  if (!("IntersectionObserver" in window)) return;
-  const navLinks = $$(".nav__link");
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const id = `#${entry.target.id}`;
-        navLinks.forEach((link) => {
-          link.classList.toggle("active", link.getAttribute("href") === id);
+// ---------------------------------------------------------------- admin
+
+const SELECT_GUARDADO = { turma: null, dia: diaSemanaHoje() };
+
+async function telaAdmin(aba) {
+  exigirPerfil('admin');
+  const abas = ['turmas', 'professores', 'aulas', 'usuarios'];
+  if (!abas.includes(aba)) aba = abas[0];
+
+  $view.innerHTML = `
+    <div class="cabec">
+      <div>
+        <h1>Painel</h1>
+        <p>Gerencie turmas, professores, aulas e acessos.</p>
+      </div>
+    </div>
+    <nav class="painel-abas">
+      ${abas.map(a => `<a href="#/admin/${a}" class="${a === aba ? 'ativo' : ''}">${a[0].toUpperCase() + a.slice(1)}</a>`).join('')}
+    </nav>
+    <section class="painel-corpo" id="painel-corpo"></section>`;
+
+  if (aba === 'aulas') return abaAulas();
+  if (aba === 'turmas') return abaTurmas();
+  if (aba === 'professores') return abaProfessores();
+  return abaUsuarios();
+}
+
+async function abaTurmas() {
+  const corpo = document.getElementById('painel-corpo');
+  const turmas = await api('/api/turmas');
+
+  corpo.innerHTML = `
+    <form class="form-painel" id="form-turma">
+      <div class="form-painel__linha">
+        <label class="campo"><span>Nome da turma</span><input name="nome" maxlength="15" required /></label>
+        <label class="campo"><span>Tipo</span>
+          <select name="tipo"><option value="medio">Ensino Médio</option><option value="tecnico">Técnico</option></select>
+        </label>
+        <button class="btn btn--primario" type="submit">Criar turma</button>
+      </div>
+    </form>
+    <div class="lista-simples">
+      ${turmas.map(t => `
+        <div class="painel-item">
+          <strong>${esc(t.nome)}</strong>
+          <small>${t.tipo === 'medio' ? 'Ens. Médio' : 'Técnico'} · ${t.aulas_preenchidas} aulas</small>
+          <button class="btn btn--mini btn--perigo" data-excluir-turma="${t.id}">Excluir</button>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('form-turma').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      await api('/api/admin/turmas', { method: 'POST', body: JSON.stringify({ nome: f.nome.value.trim(), tipo: f.tipo.value }) });
+      toast('Turma criada com 30 espaços de aula.', 'ok');
+      abaTurmas();
+    } catch (err) { toast(err.message, 'erro'); }
+  };
+
+  corpo.querySelectorAll('[data-excluir-turma]').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Excluir essa turma e todas as aulas dela?')) return;
+      try { await api(`/api/admin/turmas/${b.dataset.excluirTurma}`, { method: 'DELETE' }); toast('Turma excluída.', 'ok'); abaTurmas(); }
+      catch (err) { toast(err.message, 'erro'); }
+    };
+  });
+}
+
+async function abaProfessores() {
+  const corpo = document.getElementById('painel-corpo');
+  const professores = await api('/api/admin/professores');
+
+  corpo.innerHTML = `
+    <form class="form-painel" id="form-prof">
+      <div class="form-painel__linha">
+        <label class="campo"><span>Nome do professor</span><input name="nome" maxlength="60" required /></label>
+        <button class="btn btn--primario" type="submit">Adicionar</button>
+      </div>
+    </form>
+    <div class="lista-simples">
+      ${professores.map(p => `
+        <div class="painel-item">
+          <strong data-id="${p.id}">${esc(p.nome)}</strong>
+          <small>${p.aulas} aula${p.aulas === 1 ? '' : 's'} Vinculada${p.aulas === 1 ? '' : 's'}</small>
+          <button class="btn btn--mini" data-renomear="${p.id}">Renomear</button>
+          <button class="btn btn--mini btn--perigo" data-excluir-prof="${p.id}">Excluir</button>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('form-prof').onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api('/api/admin/professores', { method: 'POST', body: JSON.stringify({ nome: e.target.nome.value.trim() }) });
+      toast('Professor adicionado.', 'ok');
+      abaProfessores();
+    } catch (err) { toast(err.message, 'erro'); }
+  };
+
+  corpo.querySelectorAll('[data-renomear]').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.renomear;
+      const atual = corpo.querySelector(`strong[data-id="${id}"]`).textContent;
+      const nome = prompt('Novo nome do professor:', atual);
+      if (nome == null) return;
+      try { await api(`/api/admin/professores/${id}`, { method: 'PUT', body: JSON.stringify({ nome: nome.trim() }) }); toast('Renomeado.', 'ok'); abaProfessores(); }
+      catch (err) { toast(err.message, 'erro'); }
+    };
+  });
+
+  corpo.querySelectorAll('[data-excluir-prof]').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Excluir esse professor? As aulas dele ficarão sem professor.')) return;
+      try { await api(`/api/admin/professores/${b.dataset.excluirProf}`, { method: 'DELETE' }); toast('Professor excluído.', 'ok'); abaProfessores(); }
+      catch (err) { toast(err.message, 'erro'); }
+    };
+  });
+}
+
+async function abaAulas() {
+  const corpo = document.getElementById('painel-corpo');
+  const turmas = await api('/api/turmas');
+  if (!SELECT_GUARDADO.turma && turmas.length) SELECT_GUARDADO.turma = turmas[0].id;
+
+  const listaProf = await api('/api/admin/professores');
+  const dados = SELECT_GUARDADO.turma ? await api(`/api/admin/aulas/${SELECT_GUARDADO.turma}`) : null;
+  const aulas = dados ? dados.grade[SELECT_GUARDADO.dia] : [];
+
+  const datalist = `<datalist id="materias-lista">${MATERIAS_COMUNS.map(m => `<option value="${m}">`).join('')}</datalist>`;
+
+  corpo.innerHTML = `
+    <form class="form-painel" id="sel-aulas">
+      <div class="form-painel__linha">
+        <label class="campo"><span>Turma</span>
+          <select name="turma">${turmas.map(t => `<option value="${t.id}" ${t.id === SELECT_GUARDADO.turma ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select>
+        </label>
+        <label class="campo"><span>Dia</span>
+          <select name="dia">${DIAS.slice(1).map((n, i) => `<option value="${i + 1}" ${i + 1 === SELECT_GUARDADO.dia ? 'selected' : ''}>${n.replace('-feira', '')}</option>`).join('')}</select>
+        </label>
+      </div>
+    </form>
+    ${dados ? `
+      <div class="lista-simples" id="editor-aulas">
+        ${HORARIOS.map(h => {
+          const aula = aulas.find(a => a.ordem === h.ordem);
+          return `
+            <div class="editor-aula" data-aula="${aula.id}">
+              <span class="editor-aula__ordem" title="${h.inicio} – ${h.fim}">${h.ordem}</span>
+              <input type="text" data-campo="materia" value="${esc(aula.materia)}" maxlength="40"
+                     list="materias-lista" placeholder="Matéria" aria-label="Matéria da ${h.ordem}ª aula" />
+              <select data-campo="professor_id" aria-label="Professor da ${h.ordem}ª aula">
+                <option value="">— sem professor —</option>
+                ${listaProf.map(p => `<option value="${p.id}" ${aula.professor_id === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
+              </select>
+              <button class="btn btn--mini" data-mover="subir" ${h.ordem === 1 ? 'disabled' : ''} aria-label="Mover para cima">↑</button>
+              <button class="btn btn--mini" data-mover="descer" ${h.ordem === 6 ? 'disabled' : ''} aria-label="Mover para baixo">↓</button>
+            </div>`;
+        }).join('')}
+      </div>
+      <p class="cartao-turma__aulas">Horários da ${SELECT_GUARDADO.dia}ª feira: 07:20 → 12:30, intervalo 09:45 – 10:10. A 3ª e a 4ª aulas têm 45 min.</p>
+    ` : '<div class="mensagem">Crie uma turma primeiro.</div>'}
+    ${datalist}`;
+
+  const form = document.getElementById('sel-aulas');
+  form.turma.onchange = () => { SELECT_GUARDADO.turma = Number(form.turma.value); abaAulas(); };
+  form.dia.onchange = () => { SELECT_GUARDADO.dia = Number(form.dia.value); abaAulas(); };
+
+  if (!dados) return;
+
+  corpo.querySelectorAll('.editor-aula').forEach(linha => {
+    const id = Number(linha.dataset.aula);
+    const salvar = async () => {
+      try {
+        await api(`/api/admin/aulas/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            materia: linha.querySelector('[data-campo="materia"]').value,
+            professor_id: linha.querySelector('[data-campo="professor_id"]').value
+          })
         });
+        toast('Aula atualizada.', 'ok');
+      } catch (e) { toast(e.message, 'erro'); }
+    };
+    linha.querySelector('[data-campo="materia"]').onchange = salvar;
+    linha.querySelector('[data-campo="professor_id"]').onchange = salvar;
+
+    linha.querySelectorAll('[data-mover]').forEach(b => {
+      b.onclick = async () => {
+        try {
+          await api(`/api/admin/aulas/${id}/mover`, { method: 'POST', body: JSON.stringify({ direcao: b.dataset.mover }) });
+          abaAulas();
+        } catch (e) { toast(e.message, 'erro'); }
+      };
+    });
+  });
+}
+
+async function abaUsuarios() {
+  const corpo = document.getElementById('painel-corpo');
+  const usuarios = await api('/api/admin/usuarios');
+  const turmas = await api('/api/turmas');
+
+  corpo.innerHTML = `
+    <form class="form-painel" id="form-usr">
+      <div class="form-painel__linha">
+        <label class="campo"><span>Nome</span><input name="nome" maxlength="60" required /></label>
+        <label class="campo"><span>Usuário</span><input name="usuario" maxlength="20" required /></label>
+        <label class="campo"><span>Senha</span><input name="senha" type="password" maxlength="72" required /></label>
+        <label class="campo"><span>Papel</span>
+          <select name="papel"><option value="aluno">Aluno</option><option value="admin">Administrador</option></select>
+        </label>
+        <label class="campo"><span>Turma</span>
+          <select name="turma_id"><option value="">— nenhuma —</option>${turmas.map(t => `<option value="${t.id}">${esc(t.nome)}</option>`).join('')}</select>
+        </label>
+        <button class="btn btn--primario" type="submit">Criar</button>
+      </div>
+    </form>
+    <div class="lista-simples">
+      ${usuarios.map(u => `
+        <div class="painel-item">
+          <strong>${esc(u.usuario)}</strong>
+          <small>${esc(u.nome)} · ${u.papel === 'admin' ? 'administrador' : 'aluno'}${u.turma_nome ? ' · ' + esc(u.turma_nome) : ''}</small>
+          <button class="btn btn--mini btn--perigo" data-excluir-usr="${u.id}" ${u.id === estado.me.id ? 'disabled' : ''}>Excluir</button>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('form-usr').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      await api('/api/admin/usuarios', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: f.nome.value.trim(), usuario: f.usuario.value.trim(), senha: f.senha.value,
+          papel: f.papel.value, turma_id: f.turma_id.value
+        })
       });
-    },
-    { rootMargin: "-40% 0px -55% 0px" }
-  );
-  ["#inicio", "#cardapio", "#como", "#sobre", "#contato"].forEach((sel) => {
-    const section = $(sel);
-    if (section) observer.observe(section);
+      toast('Conta criada.', 'ok');
+      abaUsuarios();
+    } catch (err) { toast(err.message, 'erro'); }
+  };
+
+  corpo.querySelectorAll('[data-excluir-usr]').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Excluir essa conta?')) return;
+      try { await api(`/api/admin/usuarios/${b.dataset.excluirUsr}`, { method: 'DELETE' }); toast('Conta excluída.', 'ok'); abaUsuarios(); }
+      catch (err) { toast(err.message, 'erro'); }
+    };
   });
 }
 
-function initMobileNav() {
-  el.menuBtn.hidden = false;
-  el.menuBtn.addEventListener("click", () => {
-    if (el.mobileNav.classList.contains("open")) closeMobileNav();
-    else openMobileNav();
-  });
-  $$(".mobile-nav__link", el.mobileNav).forEach((link) => link.addEventListener("click", closeMobileNav));
-}
+// ---------------------------------------------------------------- sessão / PWA
 
-function initCartControls() {
-  el.grid.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-add]");
-    if (btn) addToCart(btn.dataset.add);
-  });
-  el.cartBtn.addEventListener("click", openCart);
-  el.fab.addEventListener("click", openCart);
-  $("#btn-cart-close").addEventListener("click", closeCart);
-  el.overlay.addEventListener("click", () => {
-    closeCart();
-    closeMobileNav();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeCart();
-      closeMobileNav();
-    }
-  });
-  el.cartItems.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-action]");
-    if (!btn) return;
-    const li = btn.closest(".cart-item");
-    const { id } = li.dataset;
-    if (btn.dataset.action === "plus") changeQty(id, 1);
-    if (btn.dataset.action === "minus") changeQty(id, -1);
-    if (btn.dataset.action === "remove") removeItem(id, li);
-  });
-  el.search.addEventListener("input", (event) => {
-    state.search = event.target.value;
-    renderProducts();
-  });
-  $$('input[name="fulfillment"]').forEach((radio) => {
-    radio.checked = state.fulfillment === radio.value;
-    radio.addEventListener("change", () => {
-      state.fulfillment = radio.value;
-      $("#field-address").hidden = state.fulfillment !== "delivery";
-      const addressInput = $("#input-address");
-      if (state.fulfillment === "delivery") addressInput.setAttribute("required", "");
-      else addressInput.removeAttribute("required");
-      updateCartUI();
-    });
-  });
-  $("#field-address").hidden = state.fulfillment !== "delivery";
-  el.checkout.addEventListener("click", (event) => {
-    event.preventDefault();
-    checkout();
-  });
-  $("#link-go-menu").addEventListener("click", () => setTimeout(closeCart, 60));
-}
-
-function initStaticLinks() {
-  const heroWa = $("#hero-whatsapp");
-  if (heroWa) heroWa.href = buildWhatsAppLink("Olá! Vim do site da Vila Esfirra e quero fazer um pedido 🥟");
-  const contactWa = $("#footer-whatsapp");
-  if (contactWa) {
-    contactWa.href = buildWhatsAppLink("Olá! Vim do site da Vila Esfirra e quero fazer um pedido 🥟");
-    contactWa.textContent = `💬 ${CONFIG.phoneDisplay}`;
+async function carregarSessao() {
+  try {
+    estado.me = await api('/api/auth/me');
+    if (!estado.me.autenticado) estado.me = null;
+  } catch {
+    estado.me = null;
   }
-  const footerWa = $("#footer-wa-2");
-  if (footerWa) {
-    footerWa.href = buildWhatsAppLink("Olá! Vim do site da Vila Esfirra e quero fazer um pedido 🥟");
-    footerWa.textContent = `WhatsApp: ${CONFIG.phoneDisplay}`;
-  }
-  ["#maps-link", "#footer-maps"].forEach((sel) => {
-    const link = $(sel);
-    if (link) link.href = CONFIG.addressUrl;
-  });
-  $("#footer-year").textContent = CONFIG.foundedYear;
-  $("#footer-year-2").textContent = new Date().getFullYear();
 }
 
-function initInstall() {
-  const buttons = ["#btn-install-header", "#btn-install-mobile", "#btn-install-contact", "#btn-install-footer"]
-    .map((sel) => $(sel))
-    .filter(Boolean);
-  const standalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
-  if (standalone) return;
-  let deferredPrompt = null;
-  const showButtons = () => buttons.forEach((btn) => (btn.hidden = false));
-  const hideButtons = () => buttons.forEach((btn) => (btn.hidden = true));
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredPrompt = event;
-    showButtons();
-  });
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (isIOS) {
-    buttons.forEach((btn) => {
-      btn.hidden = false;
-      btn.textContent = "📲 Como instalar no iPhone";
-      btn.addEventListener("click", () => {
-        toast('Toque no botão Compartilhar e depois em "Adicionar à Tela de Início"');
-      });
-    });
-  }
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (!deferredPrompt) {
-        toast("Instale pelo menu do navegador (⋮ → Instalar app) 🤙");
-        return;
-      }
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") toast("App instalado! Veja o ícone na tela inicial 🤩");
-      deferredPrompt = null;
-      hideButtons();
-    });
-  });
-  window.addEventListener("appinstalled", () => {
-    toast("App instalado com sucesso! 🎉");
-    hideButtons();
-  });
+let promptInstalacao = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  promptInstalacao = e;
+  const b = document.getElementById('btn-instalar');
+  if (b) { b.classList.add('visivel'); b.hidden = false; }
+});
+
+function configurarInstalacao() {
+  const b = document.getElementById('btn-instalar');
+  if (!b) return;
+  if (promptInstalacao) { b.classList.add('visivel'); b.hidden = false; }
+  b.onclick = async () => {
+    if (!promptInstalacao) return toast('Use o menu do navegador → "Adicionar à tela inicial".');
+    promptInstalacao.prompt();
+    const r = await promptInstalacao.userChoice;
+    if (r.outcome === 'accepted') b.classList.remove('visivel');
+    promptInstalacao = null;
+  };
 }
 
-function initServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
-  if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") return;
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  });
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
 }
 
-grabElements();
-loadCart();
-initCartControls();
-initStaticLinks();
-renderChips();
-renderProducts();
-renderHours();
-checkOpen();
-setInterval(checkOpen, 60000);
-initCounters();
-initScrollHeader();
-initScrollSpy();
-initMobileNav();
-initInstall();
-initServiceWorker();
-observeReveals();
-updateCartUI();
+setInterval(() => {
+  const s = document.getElementById('rodape-status');
+  if (s) s.textContent = navigator.onLine ? 'Conectado' : 'Offline — dados podem estar desatualizados';
+}, 2000);
+
+(async () => {
+  await carregarSessao();
+  rotear();
+})();

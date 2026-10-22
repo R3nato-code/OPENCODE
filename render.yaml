@@ -1,38 +1,30 @@
+# Deploy no Render (Blueprint)
+# https://dashboard.render.com → New + → Blueprint
+
 services:
   - type: web
-    name: vila-esfirra
-    runtime: static
-    buildCommand: echo "site estatico - sem build"
-    staticPublishPath: .
-    pullRequestPreviewsEnabled: true
-    headers:
-      - path: /sw.js
-        headers:
-          - key: Service-Worker-Allowed
-            value: /
-          - key: Cache-Control
-            value: no-cache
-      - path: /index.html
-        headers:
-          - key: Cache-Control
-            value: no-cache
-      - path: /manifest.webmanifest
-        headers:
-          - key: Cache-Control
-            value: no-cache
-      - path: /icons/*
-        headers:
-          - key: Cache-Control
-            value: public, max-age=86400
-      - path: /css/*
-        headers:
-          - key: Cache-Control
-            value: public, max-age=86400
-      - path: /js/*
-        headers:
-          - key: Cache-Control
-            value: public, max-age=86400
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    name: quadro-escolar
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+
+# ATENÇAO (plano free): o disco é efêmero — o banco SQLite (data/escola.db)
+# é recriado a cada deploy/restart, voltando ao estado inicial semeado.
+# Em planos pagos, para manter os dados adicione um disco:
+#
+#    disk:
+#      name: dados
+#      mountPath: /var/data
+#      sizeGB: 1
+# e a variável de ambiente:
+#    - key: DATA_DIR
+#      value: /var/data

@@ -1,0 +1,6 @@
+node_modules/
+data/
+*.log
+.env
+desktop.ini
+.opencode/node_modules/

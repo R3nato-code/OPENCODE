@@ -1,74 +1,66 @@
-const VERSION = "vila-esfirra-v1";
+'use strict';
 
-const CORE_ASSETS = [
-  "./",
-  "./index.html",
-  "./css/style.css",
-  "./js/app.js",
-  "./manifest.webmanifest",
-  "./icons/favicon.svg",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/maskable-512.png"
+const VERSAO = 'quadro-v1';
+const PRINCIPAIS = [
+  './',
+  './index.html',
+  './css/style.css',
+  './js/app.js',
+  './manifest.webmanifest',
+  './icons/favicon.svg',
+  './icons/icon-192.png'
 ];
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(VERSION);
-      await Promise.allSettled(CORE_ASSETS.map((url) => cache.add(url)));
-      await self.skipWaiting();
-    })()
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(VERSAO).then(c => c.addAll(PRINCIPAIS)).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.filter((key) => key !== VERSION).map((key) => caches.delete(key)));
-      await self.clients.claim();
-    })()
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then(chaves => Promise.all(chaves.filter(c => c !== VERSAO).map(c => caches.delete(c))))
+      .then(() => self.clients.claim())
   );
 });
 
-const CACHEABLE_ORIGINS = [self.location.origin, "https://fonts.googleapis.com", "https://fonts.gstatic.com"];
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
 
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      (async () => {
-        try {
-          const fresh = await fetch(request);
-          const cache = await caches.open(VERSION);
-          cache.put("./", fresh.clone());
-          return fresh;
-        } catch {
-          return (await caches.match(request)) || (await caches.match("./index.html"));
-        }
-      })()
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(
+      fetch(e.request).catch(() => Response.json(
+        { erro: 'Sem conexão. Reconnecte para atualizar os horários.' },
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      ))
     );
     return;
   }
 
-  event.respondWith(
-    (async () => {
-      const cached = await caches.match(request, { ignoreSearch: true });
-      if (cached) return cached;
-      try {
-        const fresh = await fetch(request);
-        const url = new URL(request.url);
-        if (fresh.ok && CACHEABLE_ORIGINS.includes(url.origin)) {
-          const cache = await caches.open(VERSION);
-          cache.put(request, fresh.clone());
-        }
-        return fresh;
-      } catch {
-        return new Response("", { status: 504, statusText: "Offline" });
-      }
-    })()
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(r => {
+          caches.open(VERSAO).then(c => c.match('./index.html').then(hit => {
+            if (!hit) c.add('./index.html').catch(() => { });
+          }));
+          return r;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  e.respondWith(
+    caches.match(e.request).then(hit =>
+      hit ||
+      fetch(e.request).then(r => {
+        const copia = r.clone();
+        caches.open(VERSAO).then(c => c.put(e.request, copia)).catch(() => { });
+        return r;
+      })
+    )
   );
 });

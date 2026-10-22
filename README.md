@@ -1,50 +1,65 @@
-# Vila Esfirra — Site PWA
+# Quadro Escolar — Site PWA de horários
 
-Site + PWA para uma loja de mini esfirras: cardápio dinâmico, carrinho com checkout via WhatsApp, instalação na tela inicial e funcionamento offline (service worker).
+Sistema para gerenciar e exibir a grade de aulas de uma escola.
+
+- **Login com banco de dados** (SQLite): usuários `aluno` e `admin`, senhas com hash.
+- **Aluno:** vê a grade de qualquer turma e marca turmas como **favoritas**.
+- **Admin:** cria turmas e professores, edita aulas (matéria, professor e **ordem**), cria contas.
+- **PWA:** instalável, service worker com cache offline do app.
+- **Deploy:** Render (Blueprint via `render.yaml`).
+
+## Horários das aulas
+
+| Aula | Início | Fim | Duração |
+|------|--------|-----|---------|
+| 1 | 07:20 | 08:10 | 50 min |
+| 2 | 08:10 | 09:00 | 50 min |
+| 3 | 09:00 | 09:45 | 45 min |
+| Intervalo | 09:45 | 10:10 | — |
+| 4 | 10:10 | 10:55 | 45 min |
+| 5 | 10:55 | 11:45 | 50 min |
+| 6 | 11:45 | 12:30 | 45 min |
+
+Turmas: Ensino Médio 1°A–3°C e Técnicos 2°DSB, 2°ADM, 3°DSB, 3°DSC, 3°ADM.
+
+## Rodando local
+
+```bash
+npm install
+npm start          # http://localhost:3000
+```
+
+## Acessos iniciais
+
+- Coordenação: **admin / admin123** — troque a senha depois (Painel → Usuários: crie outro admin e exclua este).
+- Alunos: criam a própria conta na tela de registro, ou são criados pelo Painel.
 
 ## Estrutura
 
 ```
-.
-├── index.html            # Página única (hero, cardápio, sobre, contato, rodapé)
-├── css/style.css         # Estilos + animações de entrada
-├── js/app.js             # Cardápio, carrinho, checkout WhatsApp, PWA install
-├── manifest.webmanifest  # Manifest do PWA
-├── sw.js                 # Service worker (cache offline)
-├── icons/                # Ícones 192/512 + maskable + favicon
-└── render.yaml           # Blueprint de deploy no Render
+server.js                 API Express (auth, grade, favoritos, admin)
+db.js                     Schema SQLite + seed (turmas, professores, admin)
+data/escola.db            Banco (criado na 1ª execução)
+index.html / js / css     Frontend SPA
+manifest.webmanifest      Manifest do PWA
+sw.js                     Service worker (cache offline)
+scripts/gerar-icones.mjs  Gera os ícones PNG/SVG (npm run icones)
+render.yaml               Blueprint de deploy no Render
 ```
-
-## Rodando localmente
-
-É preciso servir por HTTP (o service worker não funciona com `file://`):
-
-```bash
-python -m http.server 8787
-# ou
-npx serve .
-```
-
-Acesse `http://localhost:8787`.
-
-## Configurando os dados da loja
-
-Edite o objeto `CONFIG` no topo de `js/app.js`:
-
-- `whatsapp` — número no formato internacional sem símbolos (ex.: `5511999999999`)
-- `phoneDisplay`, `address`, `addressUrl` — contato e endereço (também aparecem no `index.html`)
-- `deliveryFee` e `hours` — taxa de entrega e horário de funcionamento (o site mostra "aberto/fechado" automaticamente)
-
-O cardápio fica no array `PRODUCTS` no mesmo arquivo (nome, preço, emoji, descrição, tags).
 
 ## Deploy no Render
 
-1. No painel do Render: **New + → Blueprint** e selecione este repositório — o `render.yaml` é detectado automaticamente (site estático apontando para a raiz).
-2. Alternativa manual: **New + → Static Site**, conecte o repositório, deixe o *publish directory* em `.` (raiz) — não há build.
-3. Após o deploy, registre o `sw.js` (já automático) e o PWA ficará instalável. Render entrega HTTPS, que é obrigatório para PWA.
+1. Push do repositório para o GitHub.
+2. No Render: **New + → Blueprint** — o `render.yaml` define o serviço web.
+3. *Plano free:* o disco é efêmero — em cada deploy o banco volta ao estado semeado. Para persistir dados, use um plano pago com disco (instruções comentadas no `render.yaml`).
+4. O `SESSION_SECRET` é gerado automaticamente pelo Render.
 
-## Detalhes do PWA
+## Segurança
 
-- Cache precache dos assets principais; navegação *network-first* com fallback offline para `index.html`
-- Botão "Instalar app" (Chrome/Edge) e instruções para iOS
-- `beforeinstallprompt` tratado com fallback para o menu do navegador
+- Senhas com bcrypt; sessão em cookie `HttpOnly` `SameSite=Lax` (+`Secure` em produção) assinado com HMAC.
+- Registro público só cria `aluno`; papéis e rotas administrativas validados no servidor.
+- Consultas parametrizadas (sem SQL injection) e saída escapada no frontend (sem XSS).
+
+## Auditoria de seguran�a
+
+Execute os testes de seguran�a localmente com `scripts\testa-seguranca.ps1` (bloqueio do arquivo do banco, JSON malformado, cookies adulterados, SQL injection, autoriza��o e headers).

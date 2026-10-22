@@ -1,16 +1,15 @@
 {
-  "name": "Vila Esfirra — Mini Esfirras Artesanais",
-  "short_name": "Vila Esfirra",
-  "description": "Mini esfirras artesanais feitas na hora. Monte seu pedido e envie pelo WhatsApp.",
+  "name": "Quadro Escolar — Horários",
+  "short_name": "Quadro Escolar",
+  "description": "Grade de aulas das turmas: horários, professores e favoritos.",
   "id": "./",
-  "start_url": "./",
+  "start_url": "./#/turmas",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#fff7ee",
-  "theme_color": "#e2542c",
+  "background_color": "#f2f5f3",
+  "theme_color": "#175856",
   "lang": "pt-BR",
-  "categories": ["food", "shopping"],
+  "categories": ["education"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
@@ -18,15 +17,15 @@
   ],
   "shortcuts": [
     {
-      "name": "Ver cardápio",
-      "short_name": "Cardápio",
-      "url": "./#cardapio",
+      "name": "Turmas",
+      "short_name": "Turmas",
+      "url": "./#/turmas",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Pedir no WhatsApp",
-      "short_name": "Pedir",
-      "url": "./#contato"
+      "name": "Painel",
+      "short_name": "Painel",
+      "url": "./#/admin/turmas"
     }
   ]
 }
