@@ -24,11 +24,22 @@ const $view = document.getElementById('view');
 const $topo = document.getElementById('topo');
 const estado = { me: null };
 
+const ICONES = {
+  estrelaVazia: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.4 6.2 20.3l1.1-6.4L2.6 9.3l6.5-.9L12 2.5z"/></svg>',
+  estrelaCheia: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.4 6.2 20.3l1.1-6.4L2.6 9.3l6.5-.9L12 2.5z"/></svg>',
+  setaEsquerda: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+  setaCima: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>',
+  setaBaixo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  logo: '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" fill="currentColor" opacity=".16"/><rect x="5" y="5" width="9" height="6" fill="currentColor"/><rect x="16" y="5" width="5" height="6" fill="#e8a535"/><rect x="5" y="14" width="5" height="6" fill="currentColor" opacity=".7"/><rect x="12" y="14" width="9" height="6" fill="currentColor"/></svg>',
+  olho: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  olhoFechado: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+};
+
 // ---------------------------------------------------------------- helpers
 
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    '&': '&', '<': '<', '>': '>', '"': '"', "'": '''
   }[c]));
 }
 
@@ -81,13 +92,7 @@ function renderTopo() {
   $topo.innerHTML = `
     <div class="topo__inner">
       <a class="marca" href="#/turmas" aria-label="Quadro Escolar — início">
-        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-          <rect x="1" y="1" width="24" height="24" rx="6" fill="#fff" opacity=".16"/>
-          <rect x="5" y="5" width="9" height="6" rx="2" fill="#fff"/>
-          <rect x="16" y="5" width="5" height="6" rx="2" fill="#e8a535"/>
-          <rect x="5" y="14" width="5" height="6" rx="2" fill="#fff" opacity=".7"/>
-          <rect x="12" y="14" width="9" height="6" rx="2" fill="#fff"/>
-        </svg>
+        ${ICONES.logo}
         <span>Quadro Escolar</span>
       </a>
       <nav class="topo__nav" aria-label="Navegação">${nav}</nav>
@@ -153,6 +158,7 @@ function telaLogin() {
     <div class="aut-box">
       <div class="aut-cartao">
         <div class="aut-cartao__marca">
+          ${ICONES.logo}
           <h1>Bem-vindo de volta</h1>
           <p>Consulte os horários das suas aulas.</p>
         </div>
@@ -191,6 +197,7 @@ function telaRegistro() {
     <div class="aut-box">
       <div class="aut-cartao">
         <div class="aut-cartao__marca">
+          ${ICONES.logo}
           <h1>Criar conta de aluno</h1>
           <p>Kits de acesso são criados pela coordenação.</p>
         </div>
@@ -250,6 +257,7 @@ function telaConta() {
     <div class="aut-box">
       <div class="aut-cartao">
         <div class="aut-cartao__marca">
+          ${ICONES.logo}
           <h1>Minha conta</h1>
           <p>Conectado como ${esc(estado.me.usuario)}</p>
         </div>
@@ -309,9 +317,7 @@ async function telaTurmas() {
       </a>
       <button class="btn-estrela ${t.favorita ? 'cheio' : ''}" data-fav="${t.id}"
               aria-label="${t.favorita ? 'Remover' : 'Adicionar'} aos favoritos">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4L12 17.4 6.2 20.3l1.1-6.4L2.6 9.3l6.5-.9L12 2.5z"/>
-        </svg>
+        ${t.favorita ? ICONES.estrelaCheia : ICONES.estrelaVazia}
       </button>
     </div>`;
 
@@ -355,15 +361,15 @@ async function telaGrade(turmaId, dia) {
   })();
 
   $view.innerHTML = `
-    <a class="voltar" href="#/turmas">&larr; Turmas</a>
+    <a class="voltar" href="#/turmas">${ICONES.setaEsquerda} Turmas</a>
     <div class="cabec">
       <div>
         <h1>Turma ${esc(dados.nome)}</h1>
         <p>${dados.tipo === 'medio' ? 'Ensino Médio' : 'Período Técnico'} · ${DIAS[dia]}</p>
       </div>
       ${estado.me ? `
-        <button class="btn btn--mini btn-estrela--inline" data-fav-topo="${dados.id}" aria-label="Favoritar turma">
-          ${favorita ? '&starf; Favorita' : '&star; Favoritar'}
+        <button class="btn btn--mini" data-fav-topo="${dados.id}" aria-label="${favorita ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}">
+          ${favorita ? ICONES.estrelaCheia + ' Favorita' : ICONES.estrelaVazia + ' Favoritar'}
         </button>` : ''}
     </div>
     <div class="abas-dias" role="tablist" aria-label="Dias da semana">
@@ -614,8 +620,8 @@ async function abaAulas() {
               <button class="btn btn--mini btn--primario" data-salvar title="Salvar matéria e professor">Salvar</button>
               <button class="btn btn--mini" data-limpar title="Esvaziar esta aula (sem matéria, sem professor)">Limpar</button>
               <span class="editor-aula__status" data-status></span>
-              <button class="btn btn--mini" data-mover="subir" ${h.ordem === 1 ? 'disabled' : ''} aria-label="Mover para cima">↑</button>
-              <button class="btn btn--mini" data-mover="descer" ${h.ordem === 6 ? 'disabled' : ''} aria-label="Mover para baixo">↓</button>
+              <button class="btn btn--mini" data-mover="subir" ${h.ordem === 1 ? 'disabled' : ''} aria-label="Mover para cima">${ICONES.setaCima}</button>
+              <button class="btn btn--mini" data-mover="descer" ${h.ordem === 6 ? 'disabled' : ''} aria-label="Mover para baixo">${ICONES.setaBaixo}</button>
             </div>`;
         }).join('')}
       </div>
