@@ -1,4 +1,6 @@
 node_modules/
+dist/
+__perfcheck.*
 data/
 *.log
 .env

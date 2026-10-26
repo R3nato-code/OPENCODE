@@ -3,24 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quadro Escolar — Horários</title>
-  <meta name="description" content="Grade de aulas da escola: horários por turma, professores e favoritos. App instalável." />
-  <meta name="theme-color" content="#175856" />
-  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/style.css" />
+  <title>CANDY — Xadrez com Arte Pixel e IA</title>
+  <meta name="description" content="Jogo de xadrez 3D com peças em estilo pixel art e bots de diferentes níveis de dificuldade" />
+  <meta name="theme-color" content="#2d1b4d" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CANDY" />
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topo" id="topo"></header>
-  <main class="conteudo" id="view" aria-live="polite"></main>
-  <footer class="rodape">
-    <div class="rodape__linha">
-      <span>Quadro Escolar — horários das turmas</span>
-      <span id="rodape-status"></span>
+  <div class="app-container">
+    <header class="header">
+      <h1 class="title">♟ CANDY</h1>
+      <div class="header-controls">
+        <div class="difficulty-selector">
+          <label for="difficulty">Dificuldade do Bot:</label>
+          <select id="difficulty" aria-label="Selecionar dificuldade do bot">
+            <option value="1">Fácil (Profundidade 1)</option>
+            <option value="2">Médio (Profundidade 2)</option>
+            <option value="3" selected>Difícil (Profundidade 3)</option>
+            <option value="4">Especialista (Profundidade 4)</option>
+          </select>
+        </div>
+        <div class="difficulty-selector">
+          <label for="time-control">Tempo:</label>
+          <select id="time-control" aria-label="Selecionar controle de tempo">
+            <option value="0:0" selected>Sem tempo</option>
+            <option value="60:0">1 + 0 (Bullet)</option>
+            <option value="180:0">3 + 0 (Bullet)</option>
+            <option value="180:2">3 + 2 (Blitz)</option>
+            <option value="300:0">5 + 0 (Blitz)</option>
+            <option value="300:3">5 + 3 (Blitz)</option>
+            <option value="600:0">10 + 0 (Rapid)</option>
+            <option value="900:10">15 + 10 (Rapid)</option>
+            <option value="1800:0">30 + 0 (Clássico)</option>
+          </select>
+        </div>
+        <button id="new-game" class="btn btn-primary" aria-label="Novo jogo">Novo Jogo</button>
+        <button id="toggle-view" class="btn btn-secondary" aria-label="Alternar entre visão 2D e 3D">3D</button>
+        <button id="flip-board" class="btn btn-secondary" aria-label="Virar tabuleiro">Virar Tabuleiro</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="game-area">
+        <div class="board-container">
+          <canvas id="chess-canvas" aria-label="Tabuleiro de xadrez 3D"></canvas>
+        </div>
+
+        <aside class="side-panel">
+          <div class="panel-section">
+            <h2>Status do Jogo</h2>
+            <div class="clock-panel" id="clock-panel" hidden>
+              <div class="clock clock-black" id="clock-black">--:--</div>
+              <div class="clock clock-white" id="clock-white">--:--</div>
+            </div>
+            <div id="game-status" class="game-status">
+              <span class="turn-indicator" id="turn-indicator">Vez das Brancas</span>
+              <span class="check-indicator" id="check-indicator" hidden>XEQUE!</span>
+            </div>
+            <div class="captured-pieces">
+              <div class="captured-group">
+                <span class="captured-label">Capturadas pelas Pretas:</span>
+                <div id="captured-white" class="captured-list"></div>
+              </div>
+              <div class="captured-group">
+                <span class="captured-label">Capturadas pelas Brancas:</span>
+                <div id="captured-black" class="captured-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2>Histórico de Lances</h2>
+            <div id="move-history" class="move-history" role="log" aria-live="polite"></div>
+          </div>
+
+          <div class="panel-section">
+            <h2>Controles</h2>
+            <div class="control-buttons">
+              <button id="undo-move" class="btn btn-secondary" aria-label="Desfazer lance" disabled>Desfazer</button>
+              <button id="hint-move" class="btn btn-secondary" aria-label="Sugerir lance">Dica</button>
+            </div>
+            <div class="bot-settings">
+              <label class="checkbox-label">
+                <input type="checkbox" id="bot-enabled" checked />
+                <span>Jogar contra Bot</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="bot-color" checked />
+                <span>Bot joga com as Pretas</span>
+              </label>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>CANDY — Desenvolvido com Three.js e chess.js | Arte pixel por algoritmo</p>
+    </footer>
+  </div>
+
+  <div id="promotion-modal" class="modal" hidden>
+    <div class="modal-content">
+      <h3>Promoção de Peão</h3>
+      <p>Escolha a peça para promoção:</p>
+      <div class="promotion-choices" id="promotion-choices"></div>
     </div>
-  </footer>
-  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-  <script src="js/app.js"></script>
+  </div>
+
+  <div id="game-over-modal" class="modal" hidden>
+    <div class="modal-content">
+      <h3 id="game-over-title">Fim de Jogo</h3>
+      <p id="game-over-message"></p>
+      <button id="play-again" class="btn btn-primary">Jogar Novamente</button>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>
